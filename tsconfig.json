@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "isolatedModules": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUnusedParameters": false,
+    "noUnusedLocals": true,
+    "skipLibCheck": true,
+    "importHelpers": true,
+    "removeComments": true,
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "outDir": "./dist",
+    "lib": [
+      "es2015",
+      "esnext.asynciterable",
+      "dom"
+    ],
+    "jsx": "react"
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+}

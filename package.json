@@ -1,0 +1,47 @@
+{
+  "name": "next-page-layout",
+  "version": "1.0.0-alpha.0",
+  "description": "A zero-dependency layout solution with data fetching capabilities for Next.js.",
+  "private": false,
+  "keywords": [
+    "nextjs",
+    "next.js",
+    "react",
+    "layout"
+  ],
+  "author": {
+    "name": "Andreas Bergenwall",
+    "email": "abergenw@gmail.com"
+  },
+  "license": "MIT",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint --ext .js,.jsx,.ts,.tsx src",
+    "test": "jest --no-watchman",
+    "example": "next dev ./src/example",
+    "build-example": "next build ./src/example"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^12.1.2",
+    "@types/jest": "^27.0.3",
+    "@types/react": "^17.0.37",
+    "@types/react-test-renderer": "^17.0.1",
+    "eslint": "^8.4.0",
+    "eslint-config-next": "^12.0.7",
+    "eslint-config-prettier": "^8.3.0",
+    "jest": "^27.3.1",
+    "next": "^12.0.4",
+    "prettier": "^2.5.0",
+    "react": "^17.0.2",
+    "react-test-renderer": "^17.0.2",
+    "swr": "^1.1.0",
+    "ts-jest": "^27.0.7",
+    "tslib": "^2.3.1",
+    "typescript": "^4.5.2"
+  }
+}
