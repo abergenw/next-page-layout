@@ -13,6 +13,14 @@
     "name": "Andreas Bergenwall",
     "email": "abergenw@gmail.com"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abergenw/next-page-layout.git"
+  },
+  "bugs": {
+    "url": "https://github.com/abergenw/next-page-layout/issues"
+  },
+  "homepage": "https://github.com/abergenw/next-page-layout",
   "license": "MIT",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
