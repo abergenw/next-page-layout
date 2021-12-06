@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useState } from 'react';
 import { fetchGetInitialProps, makeLayout } from './layout';
-import { create, act, ReactTestRenderer } from 'react-test-renderer';
+import { act, create, ReactTestRenderer } from 'react-test-renderer';
 import { LayoutRenderer } from './LayoutRenderer';
 import {
   ChildLayout,
@@ -10,9 +10,9 @@ import {
   LoadingComponent,
   mockPageContext,
   ParentLayout,
+  sleep,
 } from './test-utils';
 import useSWR from 'swr';
-import { sleep } from '../example/components/utils';
 
 describe('layout', () => {
   test('with parent and child', async () => {
@@ -394,7 +394,7 @@ describe('layout', () => {
 
     let renderer: ReactTestRenderer = null as any;
 
-    act(() => {
+    void act(() => {
       renderer = create(
         <LayoutRenderer
           layout={Parent}
@@ -440,7 +440,7 @@ describe('layout', () => {
       },
     });
 
-    act(() => {
+    void act(() => {
       renderer.update(
         <LayoutRenderer
           layout={Child1}
@@ -492,7 +492,7 @@ describe('layout', () => {
       },
     });
 
-    act(() => {
+    void act(() => {
       renderer.update(
         <LayoutRenderer
           layout={Child2}
@@ -522,7 +522,7 @@ describe('layout', () => {
 
     // Navigate back to Child1, no loading state expected.
 
-    act(() => {
+    void act(() => {
       renderer.update(
         <LayoutRenderer
           layout={Child1}
@@ -546,7 +546,7 @@ describe('layout', () => {
 
     // And finally, navigate back to Parent.
 
-    act(() => {
+    void act(() => {
       renderer = create(
         <LayoutRenderer
           layout={Parent}

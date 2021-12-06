@@ -1,5 +1,4 @@
 import { makeLayoutPage } from 'next-page-layout';
-import useSWR from 'swr';
 import { sleep } from '../../components/utils';
 import React from 'react';
 import { GetInitialPropsSubLayout } from '../../components/getinitialprops/getinitialprops-layouts';

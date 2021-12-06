@@ -17,7 +17,7 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "experimentalDecorators": true,
-    "outDir": "./dist",
+    "noEmit": true,
     "lib": [
       "es2015",
       "esnext.asynciterable",
@@ -26,6 +26,7 @@
     "jsx": "react"
   },
   "include": [
-    "src/**/*.ts"
-  ],
+    "src/lib/**/*.ts",
+    "src/lib/**/*.tsx"
+  ]
 }

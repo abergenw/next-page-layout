@@ -128,7 +128,7 @@ let keyCount = 0;
 
 export const makeLayout = <
   TProps extends LayoutBaseProps,
-  TInitialProps extends Partial<TProps> = {},
+  TInitialProps extends Partial<TProps> = object,
   TParent extends Layout<any, any, any, any> | undefined = undefined,
   TParentProps extends Partial<LayoutProps<TParent>> = never
 >(
@@ -189,7 +189,7 @@ export type LayoutProps<
     > &
       Omit<
         TParent extends undefined
-          ? {}
+          ? object
           : LayoutProps<TParent, Recursion[TRecursion]>,
         (TParentProps extends never ? never : keyof TParentProps) | 'children'
       > &

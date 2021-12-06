@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "./dist"
+  },
+  "files": [
+    "src/lib/index.ts",
+    "src/lib/layout.ts",
+    "src/lib/LayoutPageRenderer.tsx",
+    "src/lib/LayoutRenderer.tsx",
+    "src/lib/page.ts"
+  ],
+  "include": []
+}

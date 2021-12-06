@@ -10,7 +10,7 @@ import React from 'react';
 import { makeLayoutPage } from './page';
 import { LayoutPageRenderer } from './LayoutPageRenderer';
 import useSWR from 'swr';
-import { sleep } from '../example/components/utils';
+import { sleep } from './test-utils';
 
 describe('page', () => {
   test('without getInitialProps', async () => {
