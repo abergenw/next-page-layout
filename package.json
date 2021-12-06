@@ -14,15 +14,19 @@
     "email": "abergenw@gmail.com"
   },
   "license": "MIT",
-  "main": "dist/index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsc",
+    "prebuild": "npm run clean",
+    "build": "npm run compile && npm run lint",
+    "compile": "tsc",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx src",
     "test": "jest --no-watchman",
+    "clean": "rimraf -r dist",
     "example": "next dev ./src/example",
     "build-example": "next build ./src/example"
   },
@@ -39,6 +43,7 @@
     "prettier": "^2.5.0",
     "react": "^17.0.2",
     "react-test-renderer": "^17.0.2",
+    "rimraf": "^3.0.2",
     "swr": "^1.1.0",
     "ts-jest": "^27.0.7",
     "tslib": "^2.3.1",
