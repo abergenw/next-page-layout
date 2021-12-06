@@ -9,11 +9,14 @@ interface Props {
 export default function MainLayoutComponent(props: Props) {
   const [counter, setCounter] = useState(0);
   return (
-    <div style={{ backgroundColor: 'lightgray' }}>
+    <div style={{ backgroundColor: '#e7e7e7', padding: 20 }}>
       <div>
-        <h1 style={{ margin: 0 }}>{props.title}</h1>
+        <h1 style={{ margin: 0, marginBottom: 20 }}>{props.title}</h1>
         <div>
-          <button onClick={() => setCounter(counter + 1)}>
+          <button
+            onClick={() => setCounter(counter + 1)}
+            style={{ padding: 10 }}
+          >
             Click me to update state: ({counter})
           </button>
         </div>

@@ -7,6 +7,7 @@ interface Props extends ComponentProps<typeof NextLink> {
   exact?: boolean;
   style?: CSSProperties;
   children: ReactNode;
+  block?: boolean;
 }
 
 export default function Link(props: Props) {
@@ -25,8 +26,10 @@ export default function Link(props: Props) {
       <a
         style={{
           ...props.style,
-          color: active ? 'white' : undefined,
+          color: active ? 'white' : 'blue',
           backgroundColor: active ? 'black' : undefined,
+          padding: props.block ? 20 : undefined,
+          display: props.block ? 'block' : undefined,
         }}
       >
         {props.children}

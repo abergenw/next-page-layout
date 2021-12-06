@@ -22,7 +22,8 @@
       "next-page-layout": [
         "../lib/index"
       ]
-    }
+    },
+    "incremental": true
   },
   "include": [
     "next-env.d.ts",
