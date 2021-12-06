@@ -227,7 +227,7 @@ export default makeLayoutPage(
 );
 ```
 
-Note that while the example above renders 3 levels of components (Layout, Child and Page), all using client-side data fetching, there's no waterfall effect. All data fetching happens in parallel! Also note that there's nothing stopping you from mixing and matching layouts/pages with both getInitialProps and useInitialProps. 👍 
+Note that while the example above renders 3 levels of components (Layout, ChildLayout and Page), all using client-side data fetching, there's no waterfall effect. All data fetching happens in parallel! Also note that there's nothing stopping you from mixing and matching layouts/pages with both getInitialProps and useInitialProps. 👍 
 
 ## Support ##
 
