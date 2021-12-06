@@ -1,6 +1,8 @@
-name: Build
+name: Release
 
-on: push
+on:
+  release:
+    types: [ created ]
 
 jobs:
   build:
@@ -12,6 +14,7 @@ jobs:
         with:
           node-version: '16'
           cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install deps
         run: npm ci
@@ -21,3 +24,9 @@ jobs:
 
       - name: Test
         run: npm run test
+
+      - name: Publish
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
