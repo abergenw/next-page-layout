@@ -96,7 +96,7 @@ export default makeLayoutPage(
 );
 ```
 
-The page above defines its own **getInitialProps** but we don't have to call getInitialProps on the layout explicitly since the library takes care of this. In **useLayoutProps** we have the option to pass props to our layout (such as an overridden *title*). This is all type safe and all types are being inferred by Typescript 👍
+The page above defines its own **getInitialProps** but we don't have to call getInitialProps on the layout explicitly since the library takes care of this. In **useLayoutProps** we have the option to pass props to our layout (such as an overridden *title*). This is all type safe thanks to Typescript and type inference 👍
 
 
 ## Nested layouts ##
@@ -128,7 +128,7 @@ export const ChildLayout = makeLayout({
 });
 ```
 
-Above we create a child layout to our earlier Layout. We'd render a page with this layout just like we rendered the page with the parent Layout. getInitialProps, useLayoutProps and type inference still works out of the box 👍
+Above we create a child layout to our earlier Layout. We'd render a page with this layout just like we rendered the page with the parent Layout. getInitialProps, useLayoutProps and type inference still work out of the box 👍
 
 
 ## Client-side data fetching and useInitialProps ##
@@ -136,7 +136,7 @@ Above we create a child layout to our earlier Layout. We'd render a page with th
 Sometimes we might want to do some data fetching on the client. Despite the obvious drawbacks, client-side data fetching has the following benefits:
 
 - Authentication info might only be available on the client, preventing the server from pre-fetching data (e.g. SSO and/or external auth)
-- The default UX when navigating between NextJs pages can become "unresponsive" - to give a feeling of instant navigation, it might be better to instantly render a loading indicator in the UI where content is being updated (preserving the layout).
+- The default UX when navigating between Nextjs pages can become "unresponsive" - to give a feeling of instant navigation, it might be better to instantly render a loading indicator in the UI where content is being updated (preserving the layout).
 
 **next-page-layout** supports client-side data fetching with **useInitialProps**. Here's an example of `Layout` and `ChildLayout` used in our previous example but this time with client-side data fetching. In this example we use [SWR](https://swr.vercel.app/) to fetch data, but any solution with a similar API works well (e.g. [Apollo GraphQL and useQuery](https://www.apollographql.com/docs/react/data/queries/)).
 
@@ -227,7 +227,7 @@ export default makeLayoutPage(
 );
 ```
 
-Note that while the example above renderes 3 "levels of components" (Layout, Child and Page), all using client-side data fetching, there's no waterfall effect. All data fetching happens in parallel! Also note that there's nothing stopping you from mixing and matching layouts/pages with both getInitialProps and useInitialProps. 👍 
+Note that while the example above renders 3 levels of components (Layout, Child and Page), all using client-side data fetching, there's no waterfall effect. All data fetching happens in parallel! Also note that there's nothing stopping you from mixing and matching layouts/pages with both getInitialProps and useInitialProps. 👍 
 
 ## Support ##
 
