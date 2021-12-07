@@ -57,7 +57,7 @@ export function EmptyLayout(props: { children: ReactNode }) {
 }
 
 export function ErrorComponent(props: ErrorComponentProps) {
-  return <>{props.error.message}</>;
+  return <>{props.error?.message}</>;
 }
 
 export function LoadingComponent() {

@@ -29,7 +29,7 @@ interface Props<TLayout extends Layout<any, any, any, any>> {
 }
 
 export interface ErrorComponentProps {
-  error: Error;
+  error?: Error;
 }
 
 export function LayoutRenderer<TLayout extends Layout<any, any, any, any>>(
