@@ -12,7 +12,7 @@ import { ComponentType, ReactNode } from 'react';
 
 export type LayoutPage<
   TInitialProps,
-  TLayout extends Layout<any, any, any, any>
+  TLayout extends Layout<any, any, any>
 > = NextPage<
   TInitialProps,
   LayoutInitialPropsStack<PageLayout<TInitialProps, TLayout>>
@@ -21,10 +21,11 @@ export type LayoutPage<
   layout: PageLayout<TInitialProps, TLayout>;
 };
 
-type PageLayout<
+type PageLayout<TInitialProps, TLayout extends Layout<any, any, any>> = Layout<
   TInitialProps,
-  TLayout extends Layout<any, any, any, any>
-> = Layout<TInitialProps, TInitialProps, TLayout, LayoutProps<TLayout>>;
+  TInitialProps,
+  TLayout
+>;
 
 interface MakeLayoutPageGetInitialPropsParams<TInitialProps> {
   getInitialProps: (context: NextPageContext) => Promise<TInitialProps>;
@@ -40,7 +41,7 @@ type MakeLayoutPageInitialPropsParams<TInitialProps> =
 
 interface MakeComplexLayoutPageParams<
   TInitialProps,
-  TLayout extends Layout<any, any, any, any>
+  TLayout extends Layout<any, any, any>
 > {
   component: ComponentType<TInitialProps>;
   layout: TLayout;
@@ -54,14 +55,14 @@ interface MakeSimpleLayoutPageParams<TInitialProps> {
 
 type MakeLayoutPageParams<
   TInitialProps,
-  TLayout extends Layout<any, any, any, any>
+  TLayout extends Layout<any, any, any>
 > =
   | MakeComplexLayoutPageParams<TInitialProps, TLayout>
   | MakeSimpleLayoutPageParams<TInitialProps>;
 
 const isMakeComplexLayoutPageParams = <
   TInitialProps,
-  TLayout extends Layout<any, any, any, any>
+  TLayout extends Layout<any, any, any>
 >(
   params: MakeLayoutPageParams<TInitialProps, TLayout>
 ): params is MakeComplexLayoutPageParams<TInitialProps, TLayout> => {
@@ -72,12 +73,13 @@ const SimpleLayout = makeLayout({
   component: function SimpleLayout(props: any) {
     return props.renderLayout(props);
   },
+  useParentProps: (props) => ({}),
 });
 
 // MakeLayoutPageInitialPropsParams extracted from MakeLayoutPageParams to enable type inference.
 export const makeLayoutPage = <
   TInitialProps,
-  TLayout extends Layout<any, any, any, any>
+  TLayout extends Layout<any, any, any>
 >(
   initialPropsParams:
     | MakeLayoutPageInitialPropsParams<TInitialProps>

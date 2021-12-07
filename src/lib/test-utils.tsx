@@ -24,7 +24,7 @@ export function ParentLayout(props: ParentLayoutProps) {
   );
 }
 
-export interface ChildLayoutProps extends LayoutBaseProps {
+export interface ChildLayoutProps extends Partial<ParentLayoutProps> {
   three: string;
   four: number;
 }
@@ -39,7 +39,7 @@ export function ChildLayout(props: ChildLayoutProps) {
   );
 }
 
-export interface GrandChildLayoutProps extends LayoutBaseProps {
+export interface GrandChildLayoutProps extends Partial<ChildLayoutProps> {
   five: string;
 }
 

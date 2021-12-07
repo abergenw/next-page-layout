@@ -13,13 +13,12 @@ import {
   isServerSideLayout,
   Layout,
   LayoutInitialPropsStack,
-  LayoutParentProps,
   LayoutProps,
   useLayoutInitialProps,
   wrapError,
 } from './layout';
 
-interface Props<TLayout extends Layout<any, any, any, any>> {
+interface Props<TLayout extends Layout<any, any, any>> {
   layout: TLayout;
   layoutProps: LayoutProps<TLayout>;
   initialProps: LayoutInitialPropsStack<TLayout> | undefined;
@@ -32,7 +31,7 @@ export interface ErrorComponentProps {
   error?: Error;
 }
 
-export function LayoutRenderer<TLayout extends Layout<any, any, any, any>>(
+export function LayoutRenderer<TLayout extends Layout<any, any, any>>(
   props: Props<TLayout>
 ) {
   const [clientSideInitialProps, setClientSideInitialProps] =
@@ -53,12 +52,9 @@ export function LayoutRenderer<TLayout extends Layout<any, any, any, any>>(
     lastLayoutRef.current = props.layout;
   }, [props.layout]);
 
-  const resolveParentProps = useCallback(
-    (parentProps: InitialProps<LayoutParentProps<TLayout>>) => {
-      resolvedLayoutPropsRef.current.unshift(parentProps);
-    },
-    []
-  );
+  const resolveLayoutProps = useCallback((layoutProps: InitialProps<any>) => {
+    resolvedLayoutPropsRef.current.unshift(layoutProps);
+  }, []);
 
   const resolveClientSideInitialProps = useCallback(
     (clientSideInitialProps: LayoutInitialPropsStack<TLayout>) => {
@@ -73,8 +69,9 @@ export function LayoutRenderer<TLayout extends Layout<any, any, any, any>>(
       <LayoutResolver
         {...props}
         key={props.layout.key}
+        layoutProps={{ data: props.layoutProps }}
         resolveClientSideInitialProps={resolveClientSideInitialProps}
-        resolveParentProps={resolveParentProps}
+        resolveLayoutProps={resolveLayoutProps}
       />
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -111,33 +108,30 @@ export function LayoutRenderer<TLayout extends Layout<any, any, any, any>>(
   );
 }
 
-interface RecursiveLayoutBaseProps<TLayout extends Layout<any, any, any, any>>
+interface RecursiveLayoutBaseProps<TLayout extends Layout<any, any, any>>
   extends Omit<Props<TLayout>, 'layoutProps'> {
   layoutIndex: number;
   clientSideInitialProps: LayoutInitialPropsStack<TLayout>;
 }
 
-interface RecursiveLayoutRenderProps<TLayout extends Layout<any, any, any, any>>
+interface RecursiveLayoutRenderProps<TLayout extends Layout<any, any, any>>
   extends RecursiveLayoutBaseProps<TLayout> {
   mode: 'render';
   resolvedLayoutProps: InitialProps<LayoutProps<TLayout>>[];
 }
 
-interface RecursiveLayoutResolveProps<
-  TLayout extends Layout<any, any, any, any>
-> extends RecursiveLayoutBaseProps<TLayout> {
+interface RecursiveLayoutResolveProps<TLayout extends Layout<any, any, any>>
+  extends RecursiveLayoutBaseProps<TLayout> {
   mode: 'resolve';
-  layoutProps: LayoutProps<TLayout>;
-  resolveParentProps: (
-    parentProps: InitialProps<LayoutParentProps<TLayout>>
-  ) => void;
+  layoutProps: InitialProps<LayoutProps<TLayout>>;
+  resolveLayoutProps: (layoutProps: InitialProps<LayoutProps<TLayout>>) => void;
 }
 
-type RecursiveLayoutProps<TLayout extends Layout<any, any, any, any>> =
+type RecursiveLayoutProps<TLayout extends Layout<any, any, any>> =
   | RecursiveLayoutRenderProps<TLayout>
   | RecursiveLayoutResolveProps<TLayout>;
 
-interface LayoutResolverProps<TLayout extends Layout<any, any, any, any>>
+interface LayoutResolverProps<TLayout extends Layout<any, any, any>>
   extends Omit<
     RecursiveLayoutResolveProps<TLayout>,
     'mode' | 'clientSideInitialProps' | 'layoutIndex'
@@ -147,7 +141,7 @@ interface LayoutResolverProps<TLayout extends Layout<any, any, any, any>>
   ) => void;
 }
 
-function LayoutResolver<TLayout extends Layout<any, any, any, any>>(
+function LayoutResolver<TLayout extends Layout<any, any, any>>(
   props: LayoutResolverProps<TLayout>
 ) {
   const clientSideInitialProps = useLayoutInitialProps(props.layout);
@@ -169,7 +163,7 @@ function LayoutResolver<TLayout extends Layout<any, any, any, any>>(
   );
 }
 
-function RecursiveLayout<TLayout extends Layout<any, any, any, any>>(
+function RecursiveLayout<TLayout extends Layout<any, any, any>>(
   props: RecursiveLayoutProps<TLayout>
 ) {
   // Only one of these should be supplied so we can spread.
@@ -179,13 +173,10 @@ function RecursiveLayout<TLayout extends Layout<any, any, any, any>>(
   };
 
   const renderedLayoutRef = useRef<ReactElement>();
-  const parentPropsRef = useRef<InitialProps<LayoutParentProps<TLayout>>>();
 
   useLayoutEffect(() => {
     if (props.mode === 'resolve') {
-      props.resolveParentProps(
-        parentPropsRef.current as InitialProps<LayoutParentProps<TLayout>>
-      );
+      props.resolveLayoutProps(props.layoutProps);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Only resolve once.
   }, []);
@@ -193,20 +184,15 @@ function RecursiveLayout<TLayout extends Layout<any, any, any, any>>(
   if (props.mode === 'resolve') {
     const finalLayoutProps = {
       ...initialProps?.data,
-      ...props.layoutProps,
+      ...props.layoutProps.data,
     };
 
     let parentProps: any;
 
     try {
-      parentProps = {
-        ...props.layoutProps,
-        ...props.layout.useParentProps?.(finalLayoutProps),
-      };
-      parentPropsRef.current = { data: parentProps };
+      parentProps = { data: props.layout.useParentProps(finalLayoutProps) };
     } catch (e: unknown) {
-      parentProps = props.layoutProps;
-      parentPropsRef.current = { data: undefined, error: wrapError(e) };
+      parentProps = { data: undefined, error: wrapError(e) };
     }
 
     return props.layout.parent ? (

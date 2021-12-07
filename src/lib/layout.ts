@@ -9,28 +9,25 @@ export interface LayoutBaseProps {
 interface BaseLayoutParams<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
-  TParent extends Layout<any, any, any, any> | undefined,
-  TParentProps
+  TParent extends Layout<any, any, any> | undefined
 > {
   parent?: TParent;
-  useParentProps?: (props: TProps) => TParentProps;
+  useParentProps: (props: TProps) => LayoutProps<TParent>;
 }
 
 interface ServerSideLayoutParams<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
-  TParent extends Layout<any, any, any, any> | undefined,
-  TParentProps
-> extends BaseLayoutParams<TProps, TInitialProps, TParent, TParentProps> {
+  TParent extends Layout<any, any, any> | undefined
+> extends BaseLayoutParams<TProps, TInitialProps, TParent> {
   getInitialProps?: (context: NextPageContext) => Promise<TInitialProps>;
 }
 
 interface ClientSideLayoutParams<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
-  TParent extends Layout<any, any, any, any> | undefined,
-  TParentProps
-> extends BaseLayoutParams<TProps, TInitialProps, TParent, TParentProps> {
+  TParent extends Layout<any, any, any> | undefined
+> extends BaseLayoutParams<TProps, TInitialProps, TParent> {
   useInitialProps: () => InitialProps<TInitialProps>;
   loadingComponent?: ComponentType;
 }
@@ -38,9 +35,8 @@ interface ClientSideLayoutParams<
 export type ServerSideLayout<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
-  TParent extends Layout<any, any, any, any> | undefined,
-  TParentProps
-> = ServerSideLayoutParams<TProps, TInitialProps, TParent, TParentProps> &
+  TParent extends Layout<any, any, any> | undefined
+> = ServerSideLayoutParams<TProps, TInitialProps, TParent> &
   ComponentType<TProps> & {
     // Unique key generated to identify the layout - needed e.g. in LayoutRenderer.
     key: string;
@@ -50,9 +46,8 @@ export type ServerSideLayout<
 export type ClientSideLayout<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
-  TParent extends Layout<any, any, any, any> | undefined,
-  TParentProps
-> = ClientSideLayoutParams<TProps, TInitialProps, TParent, TParentProps> &
+  TParent extends Layout<any, any, any> | undefined
+> = ClientSideLayoutParams<TProps, TInitialProps, TParent> &
   ComponentType<TProps> & {
     key: string;
     isLayout: true;
@@ -61,67 +56,55 @@ export type ClientSideLayout<
 export type Layout<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
-  TParent extends Layout<any, any, any, any> | undefined,
-  TParentProps
+  TParent extends Layout<any, any, any> | undefined
 > =
-  | ServerSideLayout<TProps, TInitialProps, TParent, TParentProps>
-  | (ClientSideLayout<TProps, TInitialProps, TParent, TParentProps> & {
+  | ServerSideLayout<TProps, TInitialProps, TParent>
+  | (ClientSideLayout<TProps, TInitialProps, TParent> & {
       isLayout: true;
     });
 
 export const isServerSideLayout = <
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
-  TParent extends Layout<any, any, any, any> | undefined,
-  TParentProps
+  TParent extends Layout<any, any, any> | undefined
 >(
-  layout: Layout<TProps, TInitialProps, TParent, TParentProps>
-): layout is ServerSideLayout<TProps, TInitialProps, TParent, TParentProps> => {
-  return !(layout as ClientSideLayout<any, any, any, any>).useInitialProps;
+  layout: Layout<TProps, TInitialProps, TParent>
+): layout is ServerSideLayout<TProps, TInitialProps, TParent> => {
+  return !(layout as ClientSideLayout<any, any, any>).useInitialProps;
 };
 
 interface MakeServerSideLayoutParams<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
-  TParent extends Layout<any, any, any, any> | undefined,
-  TParentProps extends Partial<LayoutProps<TParent>>
-> extends ServerSideLayoutParams<TProps, TInitialProps, TParent, TParentProps> {
+  TParent extends Layout<any, any, any> | undefined
+> extends ServerSideLayoutParams<TProps, TInitialProps, TParent> {
   component: ComponentType<TProps>;
 }
 
 interface MakeClientSideLayoutParams<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
-  TParent extends Layout<any, any, any, any> | undefined,
-  TParentProps extends Partial<LayoutProps<TParent>>
-> extends ClientSideLayoutParams<TProps, TInitialProps, TParent, TParentProps> {
+  TParent extends Layout<any, any, any> | undefined
+> extends ClientSideLayoutParams<TProps, TInitialProps, TParent> {
   component: ComponentType<TProps>;
 }
 
 type MakeLayoutParams<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
-  TParent extends Layout<any, any, any, any> | undefined,
-  TParentProps extends Partial<LayoutProps<TParent>>
+  TParent extends Layout<any, any, any> | undefined
 > =
-  | MakeServerSideLayoutParams<TProps, TInitialProps, TParent, TParentProps>
-  | MakeClientSideLayoutParams<TProps, TInitialProps, TParent, TParentProps>;
+  | MakeServerSideLayoutParams<TProps, TInitialProps, TParent>
+  | MakeClientSideLayoutParams<TProps, TInitialProps, TParent>;
 
 const isMakeServerSideLayoutParams = <
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
-  TParent extends Layout<any, any, any, any> | undefined,
-  TParentProps extends Partial<LayoutProps<TParent>>
+  TParent extends Layout<any, any, any> | undefined
 >(
-  params: MakeLayoutParams<TProps, TInitialProps, TParent, TParentProps>
-): params is MakeServerSideLayoutParams<
-  TProps,
-  TInitialProps,
-  TParent,
-  TParentProps
-> => {
-  return !(params as MakeClientSideLayoutParams<any, any, any, any>)
-    .useInitialProps;
+  params: MakeLayoutParams<TProps, TInitialProps, TParent>
+): params is MakeServerSideLayoutParams<TProps, TInitialProps, TParent> => {
+  return !(params as MakeClientSideLayoutParams<any, any, any>).useInitialProps;
 };
 
 let keyCount = 0;
@@ -129,16 +112,13 @@ let keyCount = 0;
 export const makeLayout = <
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps> = object,
-  TParent extends Layout<any, any, any, any> | undefined = undefined,
-  TParentProps extends Partial<LayoutProps<TParent>> = never
+  TParent extends Layout<any, any, any> | undefined = undefined
 >(
-  params: MakeLayoutParams<TProps, TInitialProps, TParent, TParentProps>
-): Layout<TProps, TInitialProps, TParent, TParentProps> => {
+  params: MakeLayoutParams<TProps, TInitialProps, TParent>
+): Layout<TProps, TInitialProps, TParent> => {
   keyCount++;
 
-  const layout: Layout<TProps, TInitialProps, TParent, TParentProps> = (
-    props
-  ) => {
+  const layout: Layout<TProps, TInitialProps, TParent> = (props) => {
     return createElement(params.component, props);
   };
   layout.isLayout = true;
@@ -148,53 +128,29 @@ export const makeLayout = <
 
   if (isMakeServerSideLayoutParams(params)) {
     (
-      layout as ServerSideLayout<TProps, TInitialProps, TParent, TParentProps>
+      layout as ServerSideLayout<TProps, TInitialProps, TParent>
     ).getInitialProps = params.getInitialProps;
   } else {
     (
-      layout as ClientSideLayout<TProps, TInitialProps, TParent, TParentProps>
+      layout as ClientSideLayout<TProps, TInitialProps, TParent>
     ).useInitialProps = params.useInitialProps;
   }
 
   return layout;
 };
 
-export type LayoutParentProps<
-  TLayout extends Layout<any, any, any, any> | undefined
-> = TLayout extends Layout<
-  infer TProps,
-  infer TInitialProps,
-  infer TParent,
-  infer TParentProps
->
-  ? TParentProps
-  : never;
+export type LayoutParent<TLayout extends Layout<any, any, any> | undefined> =
+  TLayout extends Layout<any, any, infer TParent> ? TParent : never;
 
-type Recursion = [never, 0, 1, 2, 3, 4, 5];
+export type LayoutProps<TLayout extends Layout<any, any, any> | undefined> =
+  TLayout extends Layout<infer TProps, infer TInitialProps, any>
+    ? LayoutSelfProps<TProps, TInitialProps>
+    : Record<string, never>;
 
-export type LayoutProps<
-  TLayout extends Layout<any, any, any, any> | undefined,
-  TRecursion extends number = 6
-> = [TRecursion] extends [0]
-  ? never
-  : TLayout extends Layout<
-      infer TProps,
-      infer TInitialProps,
-      infer TParent,
-      infer TParentProps
-    >
-  ? Omit<
-      TProps,
-      (TInitialProps extends never ? never : keyof TInitialProps) | 'children'
-    > &
-      Omit<
-        TParent extends undefined
-          ? object
-          : LayoutProps<TParent, Recursion[TRecursion]>,
-        (TParentProps extends never ? never : keyof TParentProps) | 'children'
-      > &
-      Partial<TProps>
-  : never;
+type LayoutSelfProps<TProps, TInitialProps extends Partial<TProps>> = Omit<
+  TProps,
+  (TInitialProps extends never ? never : keyof TInitialProps) | 'children'
+>;
 
 export type InitialProps<TInitialProps> = {
   data: TInitialProps | undefined;
@@ -203,27 +159,19 @@ export type InitialProps<TInitialProps> = {
 };
 
 export type LayoutInitialProps<
-  TLayout extends Layout<any, any, any, any> | undefined
-> = TLayout extends Layout<
-  infer TProps,
-  infer TInitialProps,
-  infer TParent,
-  infer TParentProps
->
+  TLayout extends Layout<any, any, any> | undefined
+> = TLayout extends Layout<any, infer TInitialProps, any>
   ? InitialProps<TInitialProps>
   : never;
 
+type Recursion = [never, 0, 1, 2, 3, 4, 5];
+
 export type LayoutInitialPropsStack<
-  TLayout extends Layout<any, any, any, any> | undefined,
+  TLayout extends Layout<any, any, any> | undefined,
   TRecursion extends number = 6
 > = [TRecursion] extends [0]
   ? []
-  : TLayout extends Layout<
-      infer TProps,
-      infer TInitialProps,
-      infer TParent,
-      infer TParentProps
-    >
+  : TLayout extends Layout<infer TProps, infer TInitialProps, infer TParent>
   ? [
       LayoutInitialProps<TLayout>,
       ...LayoutInitialPropsStack<TParent, Recursion[TRecursion]>
@@ -231,7 +179,7 @@ export type LayoutInitialPropsStack<
   : [];
 
 export const layoutHasGetInitialProps = <
-  TLayout extends Layout<any, any, any, any> | undefined
+  TLayout extends Layout<any, any, any> | undefined
 >(
   layout: TLayout
 ): boolean => {
@@ -248,7 +196,7 @@ export const layoutHasGetInitialProps = <
 };
 
 export const fetchGetInitialProps = async <
-  TLayout extends Layout<any, any, any, any> | undefined
+  TLayout extends Layout<any, any, any> | undefined
 >(
   layout: TLayout,
   context: NextPageContext
@@ -279,7 +227,7 @@ export const fetchGetInitialProps = async <
 };
 
 export const useLayoutInitialProps = <
-  TLayout extends Layout<any, any, any, any> | undefined
+  TLayout extends Layout<any, any, any> | undefined
 >(
   layout: TLayout
 ): LayoutInitialPropsStack<TLayout> => {
@@ -298,7 +246,7 @@ export const useLayoutInitialProps = <
 
 export const isLayout = (
   component: ComponentType<any>
-): component is Layout<any, any, any, any> => {
+): component is Layout<any, any, any> => {
   return 'isLayout' in component;
 };
 

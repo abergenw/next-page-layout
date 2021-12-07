@@ -18,6 +18,7 @@ describe('layout', () => {
   test('with parent and child', async () => {
     const Parent = makeLayout({
       component: ParentLayout,
+      useParentProps: (props) => ({}),
     });
 
     const parent = create(
@@ -34,12 +35,16 @@ describe('layout', () => {
     const Child = makeLayout({
       component: ChildLayout,
       parent: Parent,
+      useParentProps: (props) => ({
+        one: 'one',
+        two: 2,
+      }),
     });
 
     const child = create(
       <LayoutRenderer
         layout={Child}
-        layoutProps={{ one: 'one', two: 2, three: 'three', four: 4 }}
+        layoutProps={{ three: 'three', four: 4 }}
         initialProps={await fetchGetInitialProps(Child, mockPageContext)}
       >
         content
@@ -50,16 +55,13 @@ describe('layout', () => {
     const GrandChild = makeLayout({
       component: GrandChildLayout,
       parent: Child,
+      useParentProps: (props) => ({ three: 'three', four: 4 }),
     });
 
     const grandChild = create(
       <LayoutRenderer
         layout={GrandChild}
         layoutProps={{
-          one: 'one',
-          two: 2,
-          three: 'three',
-          four: 4,
           five: 'five',
         }}
         initialProps={await fetchGetInitialProps(GrandChild, mockPageContext)}
@@ -77,53 +79,66 @@ describe('layout', () => {
     ]);
   });
 
-  test('with useParentProps', async () => {
+  test('with parent and child, overriding parent props', async () => {
     const Parent = makeLayout({
       component: ParentLayout,
+      useParentProps: (props) => ({}),
     });
 
     const Child = makeLayout({
       component: ChildLayout,
       parent: Parent,
       useParentProps: (props) => ({
-        one: props.three,
+        one: props.one ?? 'one',
+        two: 2,
       }),
     });
 
     const child = create(
       <LayoutRenderer
         layout={Child}
-        layoutProps={{ two: 2, three: 'three', four: 4 }}
+        layoutProps={{ one: 'overrideOne', three: 'three', four: 4 }}
         initialProps={await fetchGetInitialProps(Child, mockPageContext)}
       >
         content
       </LayoutRenderer>
     );
-    expect(child.toJSON()).toEqual(['three', '2', 'three', '4', 'content']);
+    expect(child.toJSON()).toEqual([
+      'overrideOne',
+      '2',
+      'three',
+      '4',
+      'content',
+    ]);
 
     const GrandChild = makeLayout({
       component: GrandChildLayout,
       parent: Child,
       useParentProps: (props) => ({
-        two: 22,
-        four: 44,
+        one: props.one ?? 'one',
+        three: props.three ?? 'three',
+        four: 4,
       }),
     });
 
     const grandChild = create(
       <LayoutRenderer
         layout={GrandChild}
-        layoutProps={{ three: 'three', five: 'five' }}
+        layoutProps={{
+          one: 'overrideOne',
+          three: 'overrideThree',
+          five: 'five',
+        }}
         initialProps={await fetchGetInitialProps(GrandChild, mockPageContext)}
       >
         content
       </LayoutRenderer>
     );
     expect(grandChild.toJSON()).toEqual([
-      'three',
-      '22',
-      'three',
-      '44',
+      'overrideOne',
+      '2',
+      'overrideThree',
+      '4',
       'five',
       'content',
     ]);
@@ -135,6 +150,7 @@ describe('layout', () => {
       getInitialProps: async (context) => ({
         one: 'initialOne',
       }),
+      useParentProps: (props) => ({}),
     });
 
     const Child = makeLayout({
@@ -199,6 +215,7 @@ describe('layout', () => {
   test('with getInitialProps error', async () => {
     const Parent = makeLayout({
       component: ParentLayout,
+      useParentProps: (props) => ({}),
       getInitialProps: async (context) => ({
         one: 'one',
         two: 2,
@@ -208,6 +225,7 @@ describe('layout', () => {
     const ChildWithError = makeLayout({
       component: ChildLayout,
       parent: Parent,
+      useParentProps: (props) => ({}),
       getInitialProps: async (context) => {
         throw new Error('child');
         return {
@@ -233,6 +251,7 @@ describe('layout', () => {
 
     const ParentWithError = makeLayout({
       component: ParentLayout,
+      useParentProps: (props) => ({}),
       getInitialProps: async (context) => {
         throw new Error('parent');
         return {
@@ -245,6 +264,7 @@ describe('layout', () => {
     const Child = makeLayout({
       component: ChildLayout,
       parent: ParentWithError,
+      useParentProps: (props) => ({}),
       getInitialProps: async (context) => {
         return {
           three: 'three',
@@ -278,16 +298,19 @@ describe('layout', () => {
         }, []);
         return <>{props.children}</>;
       },
+      useParentProps: (props) => ({}),
     });
 
     const Child1 = makeLayout({
       component: EmptyLayout,
       parent: Parent,
+      useParentProps: (props) => ({}),
     });
 
     const Child2 = makeLayout({
       component: EmptyLayout,
       parent: Parent,
+      useParentProps: (props) => ({}),
     });
 
     const parent = create(
@@ -322,6 +345,7 @@ describe('layout', () => {
   test('with different useParentProps hooks', async () => {
     const Parent = makeLayout({
       component: EmptyLayout,
+      useParentProps: (props) => ({}),
     });
 
     // Using hook in useParentProps.
@@ -338,6 +362,7 @@ describe('layout', () => {
     const Child2 = makeLayout({
       component: EmptyLayout,
       parent: Parent,
+      useParentProps: (props) => ({}),
     });
 
     const parent = create(
@@ -377,6 +402,7 @@ describe('layout', () => {
   test('with useInitialProps', async () => {
     const Parent = makeLayout({
       component: ParentLayout,
+      useParentProps: (props) => ({}),
       useInitialProps: () => {
         const result = useSWR('layoutWithUseInitialProps:parent', async () => {
           await sleep(100);
@@ -566,6 +592,7 @@ describe('layout', () => {
   test('with getInitialProps and useInitialProps', async () => {
     const Parent = makeLayout({
       component: ParentLayout,
+      useParentProps: (props) => ({}),
       getInitialProps: async () => ({
         one: 'initialOne',
         two: 2,
