@@ -9,39 +9,44 @@ interface MainLayoutProps {
   children: ReactNode;
 }
 
-export const GetInitialPropsMainLayout = makeLayout({
-  component: (props: MainLayoutProps) => {
-    return (
-      <MainLayoutComponent
-        title={props.title}
-        description={
-          <>
-            <p>
-              This illustrates how you can use a layout hierarchy and utilize
-              getInitialProps separately for each layout.
-            </p>
+export const GetInitialPropsMainLayout = makeLayout(
+  {
+    getInitialProps: async (context) => {
+      await sleep(300);
+      return {
+        title: 'GetInitialProps',
+      };
+    },
+  },
+  {
+    useParentProps: (props) => ({}),
+    component: (props: MainLayoutProps) => {
+      return (
+        <MainLayoutComponent
+          title={props.title}
+          description={
+            <>
+              <p>
+                This illustrates how you can use a layout hierarchy and utilize
+                getInitialProps separately for each layout.
+              </p>
 
-            <p>
-              In this example the main title, subtitle and page content are all
-              produced from data fetched with <b>getInitialProps</b>. Note how
-              you can pass &quot;layout props&quot; from downstream layouts (or
-              the page) to a parent layout. In this example the subtitle is
-              passed from the page.
-            </p>
-          </>
-        }
-      >
-        {props.children}
-      </MainLayoutComponent>
-    );
-  },
-  getInitialProps: async (context) => {
-    await sleep(300);
-    return {
-      title: 'GetInitialProps',
-    };
-  },
-});
+              <p>
+                In this example the main title, subtitle and page content are
+                all produced from data fetched with <b>getInitialProps</b>. Note
+                how you can pass &quot;layout props&quot; from downstream
+                layouts (or the page) to a parent layout. In this example the
+                subtitle is passed from the page.
+              </p>
+            </>
+          }
+        >
+          {props.children}
+        </MainLayoutComponent>
+      );
+    },
+  }
+);
 
 interface SubLayoutProps {
   defaultSubtitle: string;
@@ -49,22 +54,27 @@ interface SubLayoutProps {
   children: ReactNode;
 }
 
-export const GetInitialPropsSubLayout = makeLayout({
-  component: (props: SubLayoutProps) => {
-    return (
-      <SubLayoutComponent
-        subtitle={`${props.defaultSubtitle}: ${props.subtitle}`}
-        linkPrefix="getinitialprops/"
-      >
-        {props.children}
-      </SubLayoutComponent>
-    );
+export const GetInitialPropsSubLayout = makeLayout(
+  {
+    getInitialProps: async (context) => {
+      await sleep(300);
+      return {
+        defaultSubtitle: 'GetInitialProps',
+      };
+    },
   },
-  getInitialProps: async (context) => {
-    await sleep(300);
-    return {
-      defaultSubtitle: 'GetInitialProps',
-    };
-  },
-  parent: GetInitialPropsMainLayout,
-});
+  {
+    parent: GetInitialPropsMainLayout,
+    useParentProps: (props) => ({}),
+    component: (props: SubLayoutProps) => {
+      return (
+        <SubLayoutComponent
+          subtitle={`${props.defaultSubtitle}: ${props.subtitle}`}
+          linkPrefix="getinitialprops/"
+        >
+          {props.children}
+        </SubLayoutComponent>
+      );
+    },
+  }
+);
