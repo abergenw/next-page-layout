@@ -104,14 +104,9 @@ type MakeServerLayoutParams<
   TParent extends Layout<any, any, any> | undefined
 > = Omit<
   ServerLayoutParams<TProps, TInitialProps, TParent>,
-  'key' | 'isLayout' | 'getInitialProps' | 'useParentProps'
+  'key' | 'isLayout' | 'getInitialProps'
 > & {
   component: ComponentType<TProps>;
-  useParentProps: BaseLayoutParams<
-    TProps,
-    TInitialProps,
-    TParent
-  >['useParentProps'];
 };
 
 type MakeClientLayoutParams<
@@ -120,14 +115,9 @@ type MakeClientLayoutParams<
   TParent extends Layout<any, any, any> | undefined
 > = Omit<
   ClientLayoutParams<TProps, TInitialProps, TParent>,
-  'key' | 'isLayout' | 'useInitialProps' | 'useParentProps'
+  'key' | 'isLayout' | 'useInitialProps'
 > & {
   component: ComponentType<TProps>;
-  useParentProps: BaseLayoutParams<
-    TProps,
-    TInitialProps,
-    TParent
-  >['useParentProps'];
 };
 
 type MakeLayoutParams<
@@ -136,9 +126,7 @@ type MakeLayoutParams<
   TParent extends Layout<any, any, any> | undefined
 > =
   | MakeServerLayoutParams<TProps, TInitialProps, TParent>
-  | (MakeClientLayoutParams<TProps, TInitialProps, TParent> & {
-      component: ComponentType<TProps>;
-    });
+  | MakeClientLayoutParams<TProps, TInitialProps, TParent>;
 
 let keyCount = 0;
 
