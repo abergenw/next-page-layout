@@ -201,16 +201,23 @@ function RecursiveLayoutResolver<TLayout extends Layout<any, any, any>>(
     initialProps: InitialProps<T>
   ): ((callback: (data: T) => any) => any) => {
     return (callback) => {
-      return initialProps.data !== undefined
-        ? { data: callback(initialProps.data), _isInitialProps: true }
-        : {
-            data: undefined,
-            loading: initialProps.loading,
-            error: initialProps.loading
-              ? undefined
-              : new RequireParentPropsError(),
-            _isInitialProps: true,
-          };
+      const data =
+        initialProps.data !== undefined
+          ? callback(initialProps.data)
+          : undefined;
+
+      return {
+        data:
+          initialProps.data !== undefined
+            ? callback(initialProps.data)
+            : undefined,
+        loading: initialProps.loading,
+        error:
+          initialProps.error ?? data === undefined
+            ? new RequireParentPropsError()
+            : undefined,
+        _isInitialProps: true,
+      };
     };
   };
 
@@ -274,7 +281,17 @@ function RecursiveLayout<TLayout extends Layout<any, any, any>>(
   const layoutProps = props.resolvedLayoutProps[props.layoutIndex];
 
   let content;
-  if (initialProps.error || layoutProps.error) {
+  if (initialProps.loading || layoutProps.loading) {
+    const LoadingComponent =
+      (!isServerLayout(props.layout)
+        ? props.layout.loadingComponent
+        : undefined) ?? props.loadingComponent;
+
+    content =
+      (renderedLayoutRef.current?.layoutKey === props.layout.key
+        ? renderedLayoutRef.current?.content
+        : undefined) ?? (LoadingComponent ? <LoadingComponent /> : null);
+  } else if (initialProps.error || layoutProps.error) {
     renderedLayoutRef.current = undefined;
 
     content = (
@@ -286,16 +303,6 @@ function RecursiveLayout<TLayout extends Layout<any, any, any>>(
         ) : null}
       </>
     );
-  } else if (initialProps.loading || layoutProps.loading) {
-    const LoadingComponent =
-      (!isServerLayout(props.layout)
-        ? props.layout.loadingComponent
-        : undefined) ?? props.loadingComponent;
-
-    content =
-      (renderedLayoutRef.current?.layoutKey === props.layout.key
-        ? renderedLayoutRef.current?.content
-        : undefined) ?? (LoadingComponent ? <LoadingComponent /> : null);
   } else {
     const finalLayoutProps = { ...initialProps.data, ...layoutProps.data };
 

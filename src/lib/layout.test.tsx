@@ -717,7 +717,8 @@ describe('layout', () => {
     ]);
   });
 
-  test('with useInitialProps as useParentProps', async () => {
+  // useSWR data prop is undefined while loading, while useQuery in Apollo Client returns an empty object {}. Imitate both.
+  const testUseInitialPropsAsParentProps = async (imitateApollo: boolean) => {
     const Parent = makeLayout(undefined, {
       component: ParentLayout,
       useParentProps: (props) => ({}),
@@ -737,9 +738,11 @@ describe('layout', () => {
       {
         useInitialProps: () => {
           const result = useSWR(
-            'layoutWithUseInitialPropsAsUseParentProps:parent',
+            `layoutWithUseInitialPropsAsUseParentProps:${
+              imitateApollo ? 'apollo' : 'swr'
+            }`,
             async () => {
-              await sleep(100);
+              await sleep(1000);
               return {
                 three: 'initialThree',
                 four: 4,
@@ -748,7 +751,7 @@ describe('layout', () => {
           );
 
           return {
-            data: result.data,
+            data: imitateApollo ? result.data ?? ({} as any) : result.data,
             loading: !result.data,
           };
         },
@@ -759,10 +762,12 @@ describe('layout', () => {
         },
         parent: Child,
         useParentProps: (props) => {
-          return props.requireProps(({ initialProps, layoutProps }) => ({
-            three: initialProps.three,
-            four: initialProps.four,
-          }));
+          return props.requireInitialProps((initialProps) => {
+            return {
+              three: initialProps.three,
+              four: initialProps.four,
+            };
+          });
         },
       }
     );
@@ -796,7 +801,13 @@ describe('layout', () => {
       '4',
       'content',
     ]);
-  });
+  };
+
+  test('with useInitialProps as useParentProps', async () =>
+    testUseInitialPropsAsParentProps(false));
+
+  test('with useInitialProps as useParentProps (Apollo Client like)', async () =>
+    testUseInitialPropsAsParentProps(true));
 
   test("doesn't re-render loading state", async () => {
     let count = 0;
