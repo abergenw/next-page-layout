@@ -1,4 +1,4 @@
-import { NextPage, NextPageContext } from 'next';
+import { NextPage } from 'next';
 import {
   fetchGetInitialProps,
   InitialProps,
@@ -7,6 +7,7 @@ import {
   LayoutInitialPropsStack,
   LayoutProps,
   makeLayout,
+  MakeLayoutInitialParams,
 } from './layout';
 import { ComponentType, ReactNode } from 'react';
 
@@ -27,25 +28,15 @@ type PageLayout<TInitialProps, TLayout extends Layout<any, any, any>> = Layout<
   TLayout
 >;
 
-interface MakeLayoutPageGetInitialPropsParams<TInitialProps> {
-  getInitialProps: (context: NextPageContext) => Promise<TInitialProps>;
-}
-
-interface MakeLayoutPageUseInitialPropsParams<TInitialProps> {
-  useInitialProps: () => InitialProps<TInitialProps>;
-}
-
-type MakeLayoutPageInitialPropsParams<TInitialProps> =
-  | MakeLayoutPageGetInitialPropsParams<TInitialProps>
-  | MakeLayoutPageUseInitialPropsParams<TInitialProps>;
-
 interface MakeComplexLayoutPageParams<
   TInitialProps,
   TLayout extends Layout<any, any, any>
 > {
   component: ComponentType<TInitialProps>;
   layout: TLayout;
-  useLayoutProps: (props: TInitialProps) => LayoutProps<TLayout>;
+  useLayoutProps: (props: {
+    initialProps: InitialProps<TInitialProps>;
+  }) => LayoutProps<TLayout>;
 }
 
 interface MakeSimpleLayoutPageParams<TInitialProps> {
@@ -69,7 +60,7 @@ const isMakeComplexLayoutPageParams = <
   return !!(params as MakeComplexLayoutPageParams<any, any>).layout;
 };
 
-const SimpleLayout = makeLayout({
+const SimpleLayout = makeLayout(undefined, {
   component: function SimpleLayout(props: any) {
     return props.renderLayout(props);
   },
@@ -81,9 +72,7 @@ export const makeLayoutPage = <
   TInitialProps,
   TLayout extends Layout<any, any, any>
 >(
-  initialPropsParams:
-    | MakeLayoutPageInitialPropsParams<TInitialProps>
-    | undefined,
+  initialParams: MakeLayoutInitialParams<TInitialProps> | undefined,
   params: MakeLayoutPageParams<TInitialProps, TLayout>
 ): LayoutPage<TInitialProps, TLayout> => {
   if (isMakeComplexLayoutPageParams(params)) {
@@ -94,16 +83,10 @@ export const makeLayoutPage = <
     };
     page.isPage = true;
 
-    const pageLayout = makeLayout({
+    const pageLayout = makeLayout(initialParams, {
       component: params.component,
       parent: params.layout,
       useParentProps: params.useLayoutProps,
-      getInitialProps: (
-        initialPropsParams as MakeLayoutPageGetInitialPropsParams<TInitialProps>
-      )?.getInitialProps,
-      useInitialProps: (
-        initialPropsParams as MakeLayoutPageUseInitialPropsParams<TInitialProps>
-      )?.useInitialProps,
     });
 
     page.layout = pageLayout;
@@ -123,19 +106,14 @@ export const makeLayoutPage = <
   };
   page.isPage = true;
 
-  const pageLayout = makeLayout({
+  const pageLayout = makeLayout(initialParams, {
     component: params.component,
     parent: SimpleLayout,
-    useParentProps: (props) => ({
-      ...props,
-      renderLayout: params.renderLayout,
-    }),
-    getInitialProps: (
-      initialPropsParams as MakeLayoutPageGetInitialPropsParams<TInitialProps>
-    )?.getInitialProps,
-    useInitialProps: (
-      initialPropsParams as MakeLayoutPageUseInitialPropsParams<TInitialProps>
-    )?.useInitialProps,
+    useParentProps: (props) =>
+      props.requireInitialProps((initialProps) => ({
+        ...initialProps,
+        renderLayout: params.renderLayout,
+      })),
   });
 
   page.layout = pageLayout;

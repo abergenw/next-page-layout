@@ -6,106 +6,115 @@ export interface LayoutBaseProps {
   children?: ReactNode;
 }
 
-interface BaseLayoutParams<
+type BaseLayout<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
   TParent extends Layout<any, any, any> | undefined
-> {
+> = ComponentType<TProps> & {
+  // Unique key generated to identify the layout - needed e.g. in LayoutRenderer.
+  key: string;
+  isLayout: true;
   parent?: TParent;
-  useParentProps: (props: TProps) => LayoutProps<TParent>;
-}
+  useParentProps: (props: {
+    initialProps: InitialProps<TInitialProps>;
+    layoutProps: InitialProps<LayoutSelfProps<TProps, TInitialProps>>;
+    // The require functions are escape hatches which allow you to pass a loading/error state to the parent while still preserving type safety and inference.
+    // If you need initialProps (data loaded) or layoutProps (passed by downstream layout) resolved before rendering the parent layout, use these.
+    requireInitialProps: (
+      callback: (initialProps: TInitialProps) => LayoutProps<TParent>
+    ) => any;
+    requireLayoutProps: (
+      callback: (
+        layoutProps: LayoutSelfProps<TProps, TInitialProps>
+      ) => LayoutProps<TParent>
+    ) => any;
+    requireProps: (
+      callback: (props: {
+        initialProps: TInitialProps;
+        layoutProps: LayoutSelfProps<TProps, TInitialProps>;
+      }) => LayoutProps<TParent>
+    ) => any;
+  }) => LayoutProps<TParent>;
+};
 
-interface ServerSideLayoutParams<
+export type ServerLayout<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
   TParent extends Layout<any, any, any> | undefined
-> extends BaseLayoutParams<TProps, TInitialProps, TParent> {
+> = BaseLayout<TProps, TInitialProps, TParent> & {
   getInitialProps?: (context: NextPageContext) => Promise<TInitialProps>;
-}
+};
 
-interface ClientSideLayoutParams<
+export type ClientLayout<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
   TParent extends Layout<any, any, any> | undefined
-> extends BaseLayoutParams<TProps, TInitialProps, TParent> {
+> = BaseLayout<TProps, TInitialProps, TParent> & {
   useInitialProps: () => InitialProps<TInitialProps>;
   loadingComponent?: ComponentType;
-}
-
-export type ServerSideLayout<
-  TProps extends LayoutBaseProps,
-  TInitialProps extends Partial<TProps>,
-  TParent extends Layout<any, any, any> | undefined
-> = ServerSideLayoutParams<TProps, TInitialProps, TParent> &
-  ComponentType<TProps> & {
-    // Unique key generated to identify the layout - needed e.g. in LayoutRenderer.
-    key: string;
-    isLayout: true;
-  };
-
-export type ClientSideLayout<
-  TProps extends LayoutBaseProps,
-  TInitialProps extends Partial<TProps>,
-  TParent extends Layout<any, any, any> | undefined
-> = ClientSideLayoutParams<TProps, TInitialProps, TParent> &
-  ComponentType<TProps> & {
-    key: string;
-    isLayout: true;
-  };
+};
 
 export type Layout<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
   TParent extends Layout<any, any, any> | undefined
 > =
-  | ServerSideLayout<TProps, TInitialProps, TParent>
-  | (ClientSideLayout<TProps, TInitialProps, TParent> & {
-      isLayout: true;
-    });
+  | ServerLayout<TProps, TInitialProps, TParent>
+  | ClientLayout<TProps, TInitialProps, TParent>;
 
-export const isServerSideLayout = <
+export const isServerLayout = <
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
   TParent extends Layout<any, any, any> | undefined
 >(
   layout: Layout<TProps, TInitialProps, TParent>
-): layout is ServerSideLayout<TProps, TInitialProps, TParent> => {
-  return !(layout as ClientSideLayout<any, any, any>).useInitialProps;
+): layout is ServerLayout<TProps, TInitialProps, TParent> => {
+  return !(layout as ClientLayout<any, any, any>).useInitialProps;
 };
 
-interface MakeServerSideLayoutParams<
-  TProps extends LayoutBaseProps,
-  TInitialProps extends Partial<TProps>,
-  TParent extends Layout<any, any, any> | undefined
-> extends ServerSideLayoutParams<TProps, TInitialProps, TParent> {
-  component: ComponentType<TProps>;
-}
+export type MakeServerLayoutInitialParams<TInitialProps> = Pick<
+  ServerLayout<any, TInitialProps, any>,
+  'getInitialProps'
+>;
 
-interface MakeClientSideLayoutParams<
+export type MakeClientLayoutInitialParams<TInitialProps> = Pick<
+  ClientLayout<any, TInitialProps, any>,
+  'useInitialProps'
+>;
+
+export type MakeLayoutInitialParams<TInitialProps> =
+  | MakeServerLayoutInitialParams<TInitialProps>
+  | MakeClientLayoutInitialParams<TInitialProps>;
+
+type MakeServerLayoutParams<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
   TParent extends Layout<any, any, any> | undefined
-> extends ClientSideLayoutParams<TProps, TInitialProps, TParent> {
+> = Omit<
+  ServerLayout<TProps, TInitialProps, TParent>,
+  'key' | 'isLayout' | 'getInitialProps'
+> & {
   component: ComponentType<TProps>;
-}
+};
+
+type MakeClientLayoutParams<
+  TProps extends LayoutBaseProps,
+  TInitialProps extends Partial<TProps>,
+  TParent extends Layout<any, any, any> | undefined
+> = Omit<
+  ClientLayout<TProps, TInitialProps, TParent>,
+  'key' | 'isLayout' | 'useInitialProps'
+> & {
+  component: ComponentType<TProps>;
+};
 
 type MakeLayoutParams<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
   TParent extends Layout<any, any, any> | undefined
 > =
-  | MakeServerSideLayoutParams<TProps, TInitialProps, TParent>
-  | MakeClientSideLayoutParams<TProps, TInitialProps, TParent>;
-
-const isMakeServerSideLayoutParams = <
-  TProps extends LayoutBaseProps,
-  TInitialProps extends Partial<TProps>,
-  TParent extends Layout<any, any, any> | undefined
->(
-  params: MakeLayoutParams<TProps, TInitialProps, TParent>
-): params is MakeServerSideLayoutParams<TProps, TInitialProps, TParent> => {
-  return !(params as MakeClientSideLayoutParams<any, any, any>).useInitialProps;
-};
+  | MakeServerLayoutParams<TProps, TInitialProps, TParent>
+  | MakeClientLayoutParams<TProps, TInitialProps, TParent>;
 
 let keyCount = 0;
 
@@ -114,6 +123,7 @@ export const makeLayout = <
   TInitialProps extends Partial<TProps> = object,
   TParent extends Layout<any, any, any> | undefined = undefined
 >(
+  initialParams: MakeLayoutInitialParams<TInitialProps> | undefined,
   params: MakeLayoutParams<TProps, TInitialProps, TParent>
 ): Layout<TProps, TInitialProps, TParent> => {
   keyCount++;
@@ -125,16 +135,12 @@ export const makeLayout = <
   layout.key = `${layout.displayName}:${keyCount}`;
   layout.parent = params.parent;
   layout.useParentProps = params.useParentProps;
-
-  if (isMakeServerSideLayoutParams(params)) {
-    (
-      layout as ServerSideLayout<TProps, TInitialProps, TParent>
-    ).getInitialProps = params.getInitialProps;
-  } else {
-    (
-      layout as ClientSideLayout<TProps, TInitialProps, TParent>
-    ).useInitialProps = params.useInitialProps;
-  }
+  (layout as ServerLayout<TProps, TInitialProps, TParent>).getInitialProps = (
+    initialParams as MakeServerLayoutInitialParams<TInitialProps>
+  )?.getInitialProps;
+  (layout as ClientLayout<TProps, TInitialProps, TParent>).useInitialProps = (
+    initialParams as MakeClientLayoutInitialParams<TInitialProps>
+  )?.useInitialProps;
 
   return layout;
 };
@@ -184,9 +190,9 @@ export const layoutHasGetInitialProps = <
   layout: TLayout
 ): boolean => {
   let hasInitialProps = false;
-  let loopLayout = layout;
+  let loopLayout: any = layout;
   while (!!loopLayout) {
-    if (isServerSideLayout(loopLayout) && loopLayout.getInitialProps) {
+    if (isServerLayout(loopLayout) && loopLayout.getInitialProps) {
       hasInitialProps = true;
       break;
     }
@@ -203,10 +209,10 @@ export const fetchGetInitialProps = async <
 ): Promise<LayoutInitialPropsStack<TLayout>> => {
   const promises: Promise<any>[] = [];
 
-  let loopLayout = layout;
+  let loopLayout: any = layout;
   while (!!loopLayout) {
     promises.push(
-      isServerSideLayout(loopLayout) && loopLayout.getInitialProps
+      isServerLayout(loopLayout) && loopLayout.getInitialProps
         ? loopLayout.getInitialProps(context)
         : Promise.resolve({})
     );
@@ -232,10 +238,10 @@ export const useLayoutInitialProps = <
   layout: TLayout
 ): LayoutInitialPropsStack<TLayout> => {
   const initialProps: any[] = [];
-  let loopLayout = layout;
+  let loopLayout: any = layout;
   while (!!loopLayout) {
     initialProps.push(
-      !isServerSideLayout(loopLayout) && loopLayout.useInitialProps
+      !isServerLayout(loopLayout) && loopLayout.useInitialProps
         ? loopLayout.useInitialProps()
         : {}
     );

@@ -9,8 +9,9 @@ import React, {
   useState,
 } from 'react';
 import {
+  ClientLayout,
   InitialProps,
-  isServerSideLayout,
+  isServerLayout,
   Layout,
   LayoutInitialPropsStack,
   LayoutProps,
@@ -31,6 +32,14 @@ export interface ErrorComponentProps {
   error?: Error;
 }
 
+export class RequireParentPropsError extends Error {
+  constructor() {
+    super(
+      'Missing required parent props. Seems like you called any of the require functions in useParentProps and the props are missing.'
+    );
+  }
+}
+
 export function LayoutRenderer<TLayout extends Layout<any, any, any>>(
   props: Props<TLayout>
 ) {
@@ -40,21 +49,10 @@ export function LayoutRenderer<TLayout extends Layout<any, any, any>>(
   const [resolvedLayoutProps, setResolvedLayoutProps] = useState<
     InitialProps<any>[]
   >([]);
-  const resolvedLayoutPropsRef = useRef<InitialProps<any>[]>([]);
-
-  useMemo(() => {
-    resolvedLayoutPropsRef.current = [];
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- We only want to resolve layout props once for each layout stack.
-  }, [props.layout]);
 
   useLayoutEffect(() => {
-    setResolvedLayoutProps(resolvedLayoutPropsRef.current);
     lastLayoutRef.current = props.layout;
   }, [props.layout]);
-
-  const resolveLayoutProps = useCallback((layoutProps: InitialProps<any>) => {
-    resolvedLayoutPropsRef.current.unshift(layoutProps);
-  }, []);
 
   const resolveClientSideInitialProps = useCallback(
     (clientSideInitialProps: LayoutInitialPropsStack<TLayout>) => {
@@ -63,13 +61,16 @@ export function LayoutRenderer<TLayout extends Layout<any, any, any>>(
     []
   );
 
+  const resolveLayoutProps = useCallback((layoutProps: InitialProps<any>[]) => {
+    setResolvedLayoutProps(layoutProps);
+  }, []);
+
   // Only render LayoutResolver once for each layout to avoid infinite recursion when props are resolved.
   const layoutResolver = useMemo(() => {
     return (
       <LayoutResolver
         {...props}
         key={props.layout.key}
-        layoutProps={{ data: props.layoutProps }}
         resolveClientSideInitialProps={resolveClientSideInitialProps}
         resolveLayoutProps={resolveLayoutProps}
       />
@@ -84,7 +85,6 @@ export function LayoutRenderer<TLayout extends Layout<any, any, any>>(
           {...props}
           layoutIndex={0}
           clientSideInitialProps={clientSideInitialProps}
-          mode="render"
           resolvedLayoutProps={resolvedLayoutProps}
         >
           {props.children}
@@ -108,34 +108,9 @@ export function LayoutRenderer<TLayout extends Layout<any, any, any>>(
   );
 }
 
-interface RecursiveLayoutBaseProps<TLayout extends Layout<any, any, any>>
-  extends Omit<Props<TLayout>, 'layoutProps'> {
-  layoutIndex: number;
-  clientSideInitialProps: LayoutInitialPropsStack<TLayout>;
-}
-
-interface RecursiveLayoutRenderProps<TLayout extends Layout<any, any, any>>
-  extends RecursiveLayoutBaseProps<TLayout> {
-  mode: 'render';
-  resolvedLayoutProps: InitialProps<LayoutProps<TLayout>>[];
-}
-
-interface RecursiveLayoutResolveProps<TLayout extends Layout<any, any, any>>
-  extends RecursiveLayoutBaseProps<TLayout> {
-  mode: 'resolve';
-  layoutProps: InitialProps<LayoutProps<TLayout>>;
-  resolveLayoutProps: (layoutProps: InitialProps<LayoutProps<TLayout>>) => void;
-}
-
-type RecursiveLayoutProps<TLayout extends Layout<any, any, any>> =
-  | RecursiveLayoutRenderProps<TLayout>
-  | RecursiveLayoutResolveProps<TLayout>;
-
 interface LayoutResolverProps<TLayout extends Layout<any, any, any>>
-  extends Omit<
-    RecursiveLayoutResolveProps<TLayout>,
-    'mode' | 'clientSideInitialProps' | 'layoutIndex'
-  > {
+  extends Props<TLayout> {
+  resolveLayoutProps: (layoutProps: InitialProps<any>[]) => void;
   resolveClientSideInitialProps: (
     clientSideInitialProps: LayoutInitialPropsStack<TLayout>
   ) => void;
@@ -146,25 +121,49 @@ function LayoutResolver<TLayout extends Layout<any, any, any>>(
 ) {
   const clientSideInitialProps = useLayoutInitialProps(props.layout);
 
+  const resolvedLayoutPropsRef = useRef<InitialProps<any>[]>([]);
+  // Layout props are re-resolved after each render, clear current stack.
+  resolvedLayoutPropsRef.current = [];
+
+  const resolveLayoutProps = useCallback(
+    (layoutProps: InitialProps<LayoutProps<TLayout>>) => {
+      resolvedLayoutPropsRef.current.unshift(layoutProps);
+    },
+    []
+  );
+
+  useLayoutEffect(() => {
+    props.resolveLayoutProps(resolvedLayoutPropsRef.current);
+  });
+
   const { resolveClientSideInitialProps } = props;
   useLayoutEffect(() => {
     resolveClientSideInitialProps(clientSideInitialProps);
   }, [resolveClientSideInitialProps, clientSideInitialProps]);
 
   return (
-    <RecursiveLayout
+    <RecursiveLayoutResolver
       {...props}
+      resolveLayoutProps={resolveLayoutProps}
+      layoutProps={{ data: props.layoutProps }}
       layoutIndex={0}
       clientSideInitialProps={clientSideInitialProps}
-      mode="resolve"
     >
       {props.children}
-    </RecursiveLayout>
+    </RecursiveLayoutResolver>
   );
 }
 
-function RecursiveLayout<TLayout extends Layout<any, any, any>>(
-  props: RecursiveLayoutProps<TLayout>
+interface RecursiveLayoutResolverProps<TLayout extends Layout<any, any, any>>
+  extends Omit<Props<TLayout>, 'layoutProps'> {
+  layoutIndex: number;
+  clientSideInitialProps: LayoutInitialPropsStack<TLayout>;
+  layoutProps: InitialProps<LayoutProps<TLayout>>;
+  resolveLayoutProps: (layoutProps: InitialProps<LayoutProps<TLayout>>) => void;
+}
+
+function RecursiveLayoutResolver<TLayout extends Layout<any, any, any>>(
+  props: RecursiveLayoutResolverProps<TLayout>
 ) {
   // Only one of these should be supplied so we can spread.
   const initialProps = {
@@ -172,43 +171,103 @@ function RecursiveLayout<TLayout extends Layout<any, any, any>>(
     ...props.clientSideInitialProps?.[props.layoutIndex],
   };
 
-  const renderedLayoutRef = useRef<ReactElement>();
-
+  // Re-resolving layout props after each render (thus props as deps).
   useLayoutEffect(() => {
-    if (props.mode === 'resolve') {
-      props.resolveLayoutProps(props.layoutProps);
-    }
+    props.resolveLayoutProps(props.layoutProps);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Only resolve once.
-  }, []);
+  }, [props]);
 
-  if (props.mode === 'resolve') {
-    const finalLayoutProps = {
-      ...initialProps?.data,
-      ...props.layoutProps.data,
-    };
+  // TODO: Fix all this "any" crap.
 
-    let parentProps: any;
-
-    try {
-      parentProps = { data: props.layout.useParentProps(finalLayoutProps) };
-    } catch (e: unknown) {
-      parentProps = { data: undefined, error: wrapError(e) };
-    }
-
-    return props.layout.parent ? (
-      <RecursiveLayout
-        {...props}
-        layout={props.layout.parent}
-        layoutProps={parentProps}
-        layoutIndex={props.layoutIndex + 1}
-      />
-    ) : null;
+  interface RequireInitialProps extends InitialProps<any> {
+    _isInitialProps: true;
   }
+
+  const isInitialProps = (result: any): result is InitialProps<any> =>
+    (result as RequireInitialProps)._isInitialProps;
+
+  const makeRequire = <T,>(
+    initialProps: InitialProps<T>
+  ): ((callback: (data: T) => any) => any) => {
+    return (callback) => {
+      return initialProps.data !== undefined
+        ? { data: callback(initialProps.data), _isInitialProps: true }
+        : {
+            data: undefined,
+            loading: initialProps.loading,
+            error: initialProps.loading
+              ? undefined
+              : new RequireParentPropsError(),
+            _isInitialProps: true,
+          };
+    };
+  };
+
+  const requireInitialProps = makeRequire(initialProps);
+  const requireLayoutProps = makeRequire(props.layoutProps);
+  const requireProps = makeRequire({
+    data:
+      initialProps.data !== undefined && props.layoutProps.data !== undefined
+        ? {
+            initialProps: initialProps.data,
+            layoutProps: props.layoutProps.data,
+          }
+        : undefined,
+    loading: initialProps.loading || props.layoutProps.loading,
+    error: initialProps.error ?? props.layoutProps.error,
+  });
+
+  let parentProps: any;
+
+  try {
+    const resolvedParentProps = props.layout.useParentProps({
+      initialProps,
+      layoutProps: props.layoutProps,
+      requireInitialProps,
+      requireLayoutProps,
+      requireProps,
+    });
+
+    parentProps = isInitialProps(resolvedParentProps)
+      ? resolvedParentProps
+      : { data: resolvedParentProps };
+  } catch (e: unknown) {
+    parentProps = { data: undefined, error: wrapError(e) };
+  }
+
+  return props.layout.parent ? (
+    <RecursiveLayoutResolver
+      {...props}
+      layout={props.layout.parent}
+      layoutProps={parentProps}
+      layoutIndex={props.layoutIndex + 1}
+    />
+  ) : null;
+}
+
+interface RecursiveLayoutProps<TLayout extends Layout<any, any, any>>
+  extends Omit<Props<TLayout>, 'layoutProps'> {
+  layoutIndex: number;
+  clientSideInitialProps: LayoutInitialPropsStack<TLayout>;
+  resolvedLayoutProps: InitialProps<LayoutProps<TLayout>>[];
+}
+
+function RecursiveLayout<TLayout extends Layout<any, any, any>>(
+  props: RecursiveLayoutProps<TLayout>
+) {
+  // Only one of these is present, ok to spread.
+  const initialProps = {
+    ...props.initialProps?.[props.layoutIndex],
+    ...props.clientSideInitialProps?.[props.layoutIndex],
+  };
+
+  const renderedLayoutRef =
+    useRef<{ content: ReactElement; layoutKey: string }>();
 
   const layoutProps = props.resolvedLayoutProps[props.layoutIndex];
 
   let content;
-  if (initialProps?.error || layoutProps.error) {
+  if (initialProps.error || layoutProps.error) {
     renderedLayoutRef.current = undefined;
 
     content = (
@@ -220,23 +279,27 @@ function RecursiveLayout<TLayout extends Layout<any, any, any>>(
         ) : null}
       </>
     );
-  } else if (initialProps?.loading) {
+  } else if (initialProps.loading || layoutProps.loading) {
     const LoadingComponent =
-      (!isServerSideLayout(props.layout)
-        ? props.layout.loadingComponent
+      (!isServerLayout(props.layout)
+        ? // TODO: No idea why explicit cast is needed.
+          (props.layout as ClientLayout<any, any, any>).loadingComponent
         : undefined) ?? props.loadingComponent;
 
     content =
-      renderedLayoutRef.current ??
-      (LoadingComponent ? <LoadingComponent /> : null);
+      (renderedLayoutRef.current?.layoutKey === props.layout.key
+        ? renderedLayoutRef.current?.content
+        : undefined) ?? (LoadingComponent ? <LoadingComponent /> : null);
   } else {
-    const finalLayoutProps = { ...initialProps?.data, ...layoutProps.data };
+    const finalLayoutProps = { ...initialProps.data, ...layoutProps.data };
 
     content = (
       <props.layout key={props.layout.key} {...finalLayoutProps}>
         {props.children}
       </props.layout>
     );
+
+    renderedLayoutRef.current = { content, layoutKey: props.layout.key };
   }
 
   if (props.layout.parent) {

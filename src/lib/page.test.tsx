@@ -4,22 +4,22 @@ import {
   LoadingComponent,
   mockPageContext,
   ParentLayout,
+  sleep,
 } from './test-utils';
-import { create, act, ReactTestRenderer } from 'react-test-renderer';
+import { act, create, ReactTestRenderer } from 'react-test-renderer';
 import React from 'react';
 import { makeLayoutPage } from './page';
 import { LayoutPageRenderer } from './LayoutPageRenderer';
 import useSWR from 'swr';
-import { sleep } from './test-utils';
 
 describe('page', () => {
   test('without getInitialProps', async () => {
-    const Parent = makeLayout({
+    const Parent = makeLayout(undefined, {
       component: ParentLayout,
       useParentProps: (props) => ({}),
     });
 
-    const Child = makeLayout({
+    const Child = makeLayout(undefined, {
       component: ChildLayout,
       parent: Parent,
       useParentProps: (props) => ({ one: 'one', two: 2 }),
@@ -45,15 +45,19 @@ describe('page', () => {
   });
 
   test('with layout with getInitialProps', async () => {
-    const Parent = makeLayout({
-      component: ParentLayout,
-      useParentProps: (props) => ({}),
-      getInitialProps: async (context) => ({
-        one: 'one',
-      }),
-    });
+    const Parent = makeLayout(
+      {
+        getInitialProps: async (context) => ({
+          one: 'one',
+        }),
+      },
+      {
+        component: ParentLayout,
+        useParentProps: (props) => ({}),
+      }
+    );
 
-    const Child = makeLayout({
+    const Child = makeLayout(undefined, {
       component: ChildLayout,
       useParentProps: (props) => ({ two: 2 }),
       parent: Parent,
@@ -82,15 +86,19 @@ describe('page', () => {
   });
 
   test('with getInitialProps', async () => {
-    const Parent = makeLayout({
-      component: ParentLayout,
-      useParentProps: (props) => ({}),
-      getInitialProps: async (context) => ({
-        one: 'one',
-      }),
-    });
+    const Parent = makeLayout(
+      {
+        getInitialProps: async (context) => ({
+          one: 'one',
+        }),
+      },
+      {
+        component: ParentLayout,
+        useParentProps: (props) => ({}),
+      }
+    );
 
-    const Child = makeLayout({
+    const Child = makeLayout(undefined, {
       component: ChildLayout,
       parent: Parent,
       useParentProps: (props) => ({ two: 2 }),
@@ -126,15 +134,19 @@ describe('page', () => {
   });
 
   test('with getInitialProps and useInitialProps', async () => {
-    const Parent = makeLayout({
-      component: ParentLayout,
-      useParentProps: (props) => ({}),
-      getInitialProps: async (context) => ({
-        one: 'one',
-      }),
-    });
+    const Parent = makeLayout(
+      {
+        getInitialProps: async (context) => ({
+          one: 'one',
+        }),
+      },
+      {
+        component: ParentLayout,
+        useParentProps: (props) => ({}),
+      }
+    );
 
-    const Child = makeLayout({
+    const Child = makeLayout(undefined, {
       component: ChildLayout,
       parent: Parent,
       useParentProps: (props) => ({ two: 2 }),
