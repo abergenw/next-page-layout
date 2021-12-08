@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
-import { fetchGetInitialProps, makeLayout } from './layout';
+import { fetchGetInitialProps, InitialProps, makeLayout } from './layout';
 import { act, create, ReactTestRenderer } from 'react-test-renderer';
 import { LayoutRenderer } from './LayoutRenderer';
 import {
@@ -808,6 +808,70 @@ describe('layout', () => {
 
   test('with useInitialProps as useParentProps (Apollo Client like)', async () =>
     testUseInitialPropsAsParentProps(true));
+
+  test('with useInitialProps and useParentProps error', async () => {
+    const Parent = makeLayout(
+      {
+        getInitialProps: async () => ({
+          one: 'one',
+          two: 2,
+        }),
+      },
+      {
+        component: ParentLayout,
+        useParentProps: (props) => ({}),
+      }
+    );
+
+    const Child = makeLayout(undefined, {
+      component: ChildLayout,
+      parent: Parent,
+      useParentProps: (props) => ({}),
+    });
+
+    const GrandChild = makeLayout(
+      {
+        useInitialProps: () => {
+          return {
+            data: undefined,
+            error: new Error('error'),
+          } as InitialProps<Omit<ChildLayoutProps, 'children'>>;
+        },
+      },
+      {
+        component: (props: ChildLayoutProps) => {
+          return <>{props.children}</>;
+        },
+        parent: Child,
+        useParentProps: (props) => {
+          return props.requireInitialProps((initialProps) => {
+            return {
+              three: initialProps.three,
+              four: initialProps.four,
+            };
+          });
+        },
+      }
+    );
+
+    let renderer: ReactTestRenderer = null as any;
+
+    await act(async () => {
+      renderer = create(
+        <LayoutRenderer
+          layout={GrandChild}
+          layoutProps={{}}
+          initialProps={await fetchGetInitialProps(GrandChild, mockPageContext)}
+          errorComponent={ErrorComponent}
+          loadingComponent={LoadingComponent}
+        >
+          content
+        </LayoutRenderer>
+      );
+    });
+
+    expect(renderer.toJSON()).toEqual(['one', '2', 'error']);
+  });
 
   test("doesn't re-render loading state", async () => {
     let count = 0;

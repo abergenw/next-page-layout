@@ -198,24 +198,23 @@ function RecursiveLayoutResolver<TLayout extends Layout<any, any, any>>(
     (result as RequireInitialProps)._isInitialProps;
 
   const makeRequire = <T,>(
-    initialProps: InitialProps<T>
+    requireProps: InitialProps<T>
   ): ((callback: (data: T) => any) => any) => {
     return (callback) => {
       const data =
-        initialProps.data !== undefined
-          ? callback(initialProps.data)
+        requireProps.data !== undefined
+          ? callback(requireProps.data)
           : undefined;
 
       return {
         data:
-          initialProps.data !== undefined
-            ? callback(initialProps.data)
+          requireProps.data !== undefined
+            ? callback(requireProps.data)
             : undefined,
-        loading: initialProps.loading,
+        loading: requireProps.loading,
         error:
-          initialProps.error ?? data === undefined
-            ? new RequireParentPropsError()
-            : undefined,
+          requireProps.error ??
+          (data === undefined ? new RequireParentPropsError() : undefined),
         _isInitialProps: true,
       };
     };
