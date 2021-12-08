@@ -798,7 +798,7 @@ describe('layout', () => {
     ]);
   });
 
-  test("doesn't re-render loading state dea", async () => {
+  test("doesn't re-render loading state", async () => {
     let count = 0;
     const Parent = makeLayout(
       {

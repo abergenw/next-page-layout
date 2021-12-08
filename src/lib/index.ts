@@ -1,6 +1,6 @@
 export {
   makeLayout,
-  isServerSideLayout,
+  isServerLayout,
   layoutHasGetInitialProps,
   fetchGetInitialProps,
   useLayoutInitialProps,
@@ -8,10 +8,10 @@ export {
 } from './layout';
 export type {
   LayoutBaseProps,
-  ServerSideLayout,
-  ClientSideLayout,
+  ServerLayout,
+  ClientLayout,
   Layout,
-  LayoutParentProps,
+  LayoutParent,
   LayoutProps,
   InitialProps,
   LayoutInitialProps,

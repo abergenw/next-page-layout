@@ -162,22 +162,34 @@ interface RecursiveLayoutResolverProps<TLayout extends Layout<any, any, any>>
   resolveLayoutProps: (layoutProps: InitialProps<LayoutProps<TLayout>>) => void;
 }
 
-function RecursiveLayoutResolver<TLayout extends Layout<any, any, any>>(
-  props: RecursiveLayoutResolverProps<TLayout>
-) {
-  // Only one of these should be supplied so we can spread.
-  const initialProps = {
+const resolveInitialProps = (props: {
+  layoutIndex: number;
+  clientSideInitialProps: LayoutInitialPropsStack<any>;
+  initialProps: LayoutInitialPropsStack<any> | undefined;
+}): InitialProps<any> => {
+  const initialProps: any = {
     ...props.initialProps?.[props.layoutIndex],
     ...props.clientSideInitialProps?.[props.layoutIndex],
   };
+  // data is missing if no initialProps are defined. This prevents upstream layouts from rendering if any of the require functions are used in useParentProps.
+  if (!('data' in initialProps)) {
+    initialProps.data = {};
+  }
+  return initialProps;
+};
+
+function RecursiveLayoutResolver<TLayout extends Layout<any, any, any>>(
+  props: RecursiveLayoutResolverProps<TLayout>
+) {
+  // TODO: Fix all this "any" crap.
+
+  const initialProps = resolveInitialProps(props);
 
   // Re-resolving layout props after each render (thus props as deps).
   useLayoutEffect(() => {
     props.resolveLayoutProps(props.layoutProps);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Only resolve once.
   }, [props]);
-
-  // TODO: Fix all this "any" crap.
 
   interface RequireInitialProps extends InitialProps<any> {
     _isInitialProps: true;
@@ -255,11 +267,7 @@ interface RecursiveLayoutProps<TLayout extends Layout<any, any, any>>
 function RecursiveLayout<TLayout extends Layout<any, any, any>>(
   props: RecursiveLayoutProps<TLayout>
 ) {
-  // Only one of these is present, ok to spread.
-  const initialProps = {
-    ...props.initialProps?.[props.layoutIndex],
-    ...props.clientSideInitialProps?.[props.layoutIndex],
-  };
+  const initialProps = resolveInitialProps(props);
 
   const renderedLayoutRef =
     useRef<{ content: ReactElement; layoutKey: string }>();
