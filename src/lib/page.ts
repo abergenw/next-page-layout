@@ -1,11 +1,10 @@
 import { NextPage } from 'next';
 import {
+  BaseLayoutParams,
   fetchGetInitialProps,
-  InitialProps,
   Layout,
   layoutHasGetInitialProps,
   LayoutInitialPropsStack,
-  LayoutProps,
   makeLayout,
   MakeLayoutInitialParams,
 } from './layout';
@@ -34,9 +33,11 @@ interface MakeComplexLayoutPageParams<
 > {
   component: ComponentType<TInitialProps>;
   layout: TLayout;
-  useLayoutProps: (props: {
-    initialProps: InitialProps<TInitialProps>;
-  }) => LayoutProps<TLayout>;
+  useLayoutProps: BaseLayoutParams<
+    TInitialProps,
+    TInitialProps,
+    TLayout
+  >['useParentProps'];
 }
 
 interface MakeSimpleLayoutPageParams<TInitialProps> {

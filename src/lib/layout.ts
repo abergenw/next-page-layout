@@ -6,7 +6,7 @@ export interface LayoutBaseProps {
   children?: ReactNode;
 }
 
-interface BaseLayoutParams<
+export interface BaseLayoutParams<
   TProps extends LayoutBaseProps,
   TInitialProps extends Partial<TProps>,
   TParent extends Layout<any, any, any> | undefined
