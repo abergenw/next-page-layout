@@ -1,6 +1,6 @@
 {
   "name": "next-page-layout",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-alpha.6",
   "description": "A type safe, zero dependency layout solution with data fetching capabilities for Next.js.",
   "private": false,
   "keywords": [
