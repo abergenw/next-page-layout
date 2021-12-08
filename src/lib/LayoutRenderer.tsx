@@ -9,7 +9,6 @@ import React, {
   useState,
 } from 'react';
 import {
-  ClientLayout,
   InitialProps,
   isServerLayout,
   Layout,
@@ -290,8 +289,7 @@ function RecursiveLayout<TLayout extends Layout<any, any, any>>(
   } else if (initialProps.loading || layoutProps.loading) {
     const LoadingComponent =
       (!isServerLayout(props.layout)
-        ? // TODO: No idea why explicit cast is needed.
-          (props.layout as ClientLayout<any, any, any>).loadingComponent
+        ? props.layout.loadingComponent
         : undefined) ?? props.loadingComponent;
 
     content =
