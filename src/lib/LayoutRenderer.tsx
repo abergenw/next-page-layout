@@ -274,22 +274,29 @@ function RecursiveLayout<TLayout extends Layout<any, any, any>>(
 ) {
   const initialProps = resolveInitialProps(props);
 
-  const renderedLayoutRef =
-    useRef<{ content: ReactElement; layoutKey: string }>();
+  const renderedLayoutRef = useRef<{ layout: TLayout; layoutProps: any }>();
 
   const layoutProps = props.resolvedLayoutProps[props.layoutIndex];
 
   let content;
   if (initialProps.loading || layoutProps.loading) {
-    const LoadingComponent =
-      (!isServerLayout(props.layout)
-        ? props.layout.loadingComponent
-        : undefined) ?? props.loadingComponent;
+    if (renderedLayoutRef.current?.layout === props.layout) {
+      content = (
+        <props.layout
+          key={props.layout.key}
+          {...renderedLayoutRef.current?.layoutProps}
+        >
+          {props.children}
+        </props.layout>
+      );
+    } else {
+      const LoadingComponent =
+        (!isServerLayout(props.layout)
+          ? props.layout.loadingComponent
+          : undefined) ?? props.loadingComponent;
 
-    content =
-      (renderedLayoutRef.current?.layoutKey === props.layout.key
-        ? renderedLayoutRef.current?.content
-        : undefined) ?? (LoadingComponent ? <LoadingComponent /> : null);
+      content = LoadingComponent ? <LoadingComponent /> : null;
+    }
   } else if (initialProps.error || layoutProps.error) {
     renderedLayoutRef.current = undefined;
 
@@ -311,7 +318,10 @@ function RecursiveLayout<TLayout extends Layout<any, any, any>>(
       </props.layout>
     );
 
-    renderedLayoutRef.current = { content, layoutKey: props.layout.key };
+    renderedLayoutRef.current = {
+      layout: props.layout,
+      layoutProps: finalLayoutProps,
+    };
   }
 
   if (props.layout.parent) {
