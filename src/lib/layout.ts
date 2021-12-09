@@ -162,7 +162,7 @@ export type LayoutParent<TLayout extends Layout<any, any, any> | undefined> =
 
 export type LayoutProps<TLayout extends Layout<any, any, any> | undefined> =
   TLayout extends Layout<infer TProps, infer TInitialProps, any>
-    ? LayoutSelfProps<TProps, TInitialProps>
+    ? LayoutSelfProps<TProps, TInitialProps> & Partial<TInitialProps>
     : Record<string, never>;
 
 type LayoutSelfProps<TProps, TInitialProps extends Partial<TProps>> = Omit<
