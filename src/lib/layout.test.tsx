@@ -54,6 +54,16 @@ describe('layout', () => {
     );
     expect(child.toJSON()).toEqual(['one', '2', 'three', '4', 'content']);
 
+    // renderToString(
+    //   <LayoutRenderer
+    //     layout={Child}
+    //     layoutProps={{ three: 'three', four: 4 }}
+    //     initialProps={await fetchGetInitialProps(Child, mockPageContext)}
+    //   >
+    //     content
+    //   </LayoutRenderer>
+    // );
+
     const GrandChild = makeLayout(undefined, {
       component: GrandChildLayout,
       parent: Child,
