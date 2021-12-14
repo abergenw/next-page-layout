@@ -27,6 +27,12 @@ export default function App({ Component, pageProps }: AppProps) {
           <Link href="/getinitialprops" block style={{ marginRight: 20 }}>
             GetInitialProps
           </Link>
+          <Link href="/getserversideprops" block style={{ marginRight: 20 }}>
+            GetServerSideProps
+          </Link>
+          <Link href="/getstaticprops" block style={{ marginRight: 20 }}>
+            GetStaticProps
+          </Link>
           <Link href="/useinitialprops" block style={{ marginRight: 20 }}>
             UseInitialProps
           </Link>

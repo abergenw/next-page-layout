@@ -1,7 +1,9 @@
-import { NextPage } from 'next';
+import { GetServerSideProps, GetStaticProps, NextPage } from 'next';
 import {
   BaseLayoutParams,
   fetchGetInitialProps,
+  fetchGetServerSideProps,
+  fetchGetStaticProps,
   Layout,
   layoutHasGetInitialProps,
   LayoutInitialPropsStack,
@@ -19,6 +21,8 @@ export type LayoutPage<
 > & {
   isPage: boolean;
   layout: PageLayout<TInitialProps, TLayout>;
+  _getStaticProps: GetStaticProps<any>;
+  _getServerSideProps: GetServerSideProps<any>;
 };
 
 type PageLayout<TInitialProps, TLayout extends Layout<any, any, any>> = Layout<
@@ -97,6 +101,22 @@ export const makeLayoutPage = <
         fetchGetInitialProps(pageLayout, context);
     }
 
+    page._getStaticProps = async (context) => {
+      return {
+        props: {
+          _plain: await fetchGetStaticProps(pageLayout, context),
+        },
+      };
+    };
+
+    page._getServerSideProps = async (context) => {
+      return {
+        props: {
+          _plain: await fetchGetServerSideProps(pageLayout, context),
+        },
+      };
+    };
+
     return page;
   }
 
@@ -123,6 +143,22 @@ export const makeLayoutPage = <
     page.getInitialProps = (context) =>
       fetchGetInitialProps(pageLayout, context);
   }
+
+  page._getStaticProps = async (context) => {
+    return {
+      props: {
+        _plain: await fetchGetStaticProps(pageLayout, context),
+      },
+    };
+  };
+
+  page._getServerSideProps = async (context) => {
+    return {
+      props: {
+        _plain: await fetchGetServerSideProps(pageLayout, context),
+      },
+    };
+  };
 
   return page as any;
 };

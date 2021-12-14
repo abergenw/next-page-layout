@@ -3,10 +3,20 @@ import {
   ErrorComponent,
   GrandChildLayout,
   IsomorphicRenderer,
+  mockGetServerSidePropsContext,
+  mockGetStaticPropsContext,
   mockPageContext,
   ParentLayout,
 } from './test-utils';
-import { fetchGetInitialProps, makeLayout } from './layout';
+import {
+  fetchGetInitialProps,
+  fetchGetServerSideProps,
+  fetchGetStaticProps,
+  Layout,
+  LayoutInitialPropsStack,
+  makeLayout,
+  MakeLayoutInitialParams,
+} from './layout';
 import { LayoutRenderer } from './LayoutRenderer';
 import React from 'react';
 
@@ -68,72 +78,131 @@ export const commonLayoutTests = (renderer: IsomorphicRenderer) => {
     );
   });
 
-  test('with getInitialProps', async () => {
-    const Parent = makeLayout(
-      {
-        getInitialProps: async (context) => ({
-          one: 'initialOne',
-        }),
-      },
-      {
+  const testWithInitialProps = (params: {
+    makeParentInitialParams: MakeLayoutInitialParams<{ one: 'initialOne' }>;
+    makeChildInitialParams: MakeLayoutInitialParams<{ three: 'initialThree' }>;
+    makeGrandChildInitialParams: MakeLayoutInitialParams<{
+      five: 'initialFive';
+    }>;
+    fetchInitialParams: <TLayout extends Layout<any, any, any>>(
+      layout: TLayout
+    ) => Promise<LayoutInitialPropsStack<TLayout>>;
+  }) => {
+    return async () => {
+      const Parent = makeLayout(params.makeParentInitialParams, {
         component: ParentLayout,
         useParentProps: (props) => ({}),
-      }
-    );
+      });
 
-    const Child = makeLayout(
-      {
-        getInitialProps: async (context) => ({
-          three: 'initialThree',
-        }),
-      },
-      {
+      const Child = makeLayout(params.makeChildInitialParams, {
         component: ChildLayout,
         parent: Parent,
         useParentProps: (props) =>
           props.requireLayoutProps((layoutProps) => ({
             two: layoutProps.four,
           })),
-      }
-    );
+      });
 
-    renderer.renderAndExpect(
-      <LayoutRenderer
-        layout={Child}
-        layoutProps={{ four: 4 }}
-        initialProps={await fetchGetInitialProps(Child, mockPageContext)}
-      >
-        content
-      </LayoutRenderer>,
-      ['initialOne', '4', 'initialThree', '4', 'content']
-    );
+      renderer.renderAndExpect(
+        <LayoutRenderer
+          layout={Child}
+          layoutProps={{ four: 4 }}
+          initialProps={await params.fetchInitialParams(Child)}
+        >
+          content
+        </LayoutRenderer>,
+        ['initialOne', '4', 'initialThree', '4', 'content']
+      );
 
-    const GrandChild = makeLayout(
-      {
-        getInitialProps: async (context) => ({
-          five: 'initialFive',
-        }),
-      },
-      {
+      const GrandChild = makeLayout(params.makeGrandChildInitialParams, {
         component: GrandChildLayout,
         parent: Child,
         useParentProps: (props) => ({
           four: 4,
         }),
-      }
-    );
+      });
 
-    renderer.renderAndExpect(
-      <LayoutRenderer
-        layout={GrandChild}
-        layoutProps={{}}
-        initialProps={await fetchGetInitialProps(GrandChild, mockPageContext)}
-      >
-        content
-      </LayoutRenderer>,
-      ['initialOne', '4', 'initialThree', '4', 'initialFive', 'content']
-    );
-  });
+      renderer.renderAndExpect(
+        <LayoutRenderer
+          layout={GrandChild}
+          layoutProps={{}}
+          initialProps={await params.fetchInitialParams(GrandChild)}
+        >
+          content
+        </LayoutRenderer>,
+        ['initialOne', '4', 'initialThree', '4', 'initialFive', 'content']
+      );
+    };
+  };
+
+  test(
+    'with getInitialProps',
+    testWithInitialProps({
+      makeParentInitialParams: {
+        getInitialProps: async (context) => ({
+          one: 'initialOne',
+        }),
+      },
+      makeChildInitialParams: {
+        getInitialProps: async (context) => ({
+          three: 'initialThree',
+        }),
+      },
+      makeGrandChildInitialParams: {
+        getInitialProps: async (context) => ({
+          five: 'initialFive',
+        }),
+      },
+      fetchInitialParams: (layout) =>
+        fetchGetInitialProps(layout, mockPageContext),
+    })
+  );
+
+  test(
+    'with getServerSideProps',
+    testWithInitialProps({
+      makeParentInitialParams: {
+        getServerSideProps: async (context) => ({
+          one: 'initialOne',
+        }),
+      },
+      makeChildInitialParams: {
+        getServerSideProps: async (context) => ({
+          three: 'initialThree',
+        }),
+      },
+      makeGrandChildInitialParams: {
+        getServerSideProps: async (context) => ({
+          five: 'initialFive',
+        }),
+      },
+      fetchInitialParams: (layout) =>
+        fetchGetServerSideProps(layout, mockGetServerSidePropsContext),
+    })
+  );
+
+  test(
+    'with getStaticProps',
+    testWithInitialProps({
+      makeParentInitialParams: {
+        getStaticProps: async (context) => ({
+          one: 'initialOne',
+        }),
+      },
+      makeChildInitialParams: {
+        getStaticProps: async (context) => ({
+          three: 'initialThree',
+        }),
+      },
+      makeGrandChildInitialParams: {
+        getStaticProps: async (context) => ({
+          five: 'initialFive',
+        }),
+      },
+      fetchInitialParams: (layout) =>
+        fetchGetStaticProps(layout, mockGetStaticPropsContext),
+    })
+  );
 
   test('with getInitialProps error', async () => {
     const Parent = makeLayout(

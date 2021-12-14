@@ -1,5 +1,9 @@
 import { ComponentType, createElement, ReactNode } from 'react';
-import { NextPageContext } from 'next';
+import {
+  GetServerSidePropsContext,
+  GetStaticPropsContext,
+  NextPageContext,
+} from 'next';
 
 export interface LayoutBaseProps {
   // Children should always be supplied in layouts, but loosening this since pages are also layouts.
@@ -47,6 +51,10 @@ interface ServerLayoutParams<
   TParent extends Layout<any, any, any> | undefined
 > extends BaseLayoutParams<TProps, TInitialProps, TParent> {
   getInitialProps?: (context: NextPageContext) => Promise<TInitialProps>;
+  getStaticProps?: (context: GetStaticPropsContext) => Promise<TInitialProps>;
+  getServerSideProps?: (
+    context: GetServerSidePropsContext
+  ) => Promise<TInitialProps>;
 }
 
 export type ServerLayout<
@@ -100,7 +108,7 @@ export const isClientLayout = <
 
 export type MakeServerLayoutInitialParams<TInitialProps> = Pick<
   ServerLayoutParams<any, TInitialProps, any>,
-  'getInitialProps'
+  'getInitialProps' | 'getStaticProps' | 'getServerSideProps'
 >;
 
 export type MakeClientLayoutInitialParams<TInitialProps> = Pick<
@@ -118,7 +126,11 @@ type MakeServerLayoutParams<
   TParent extends Layout<any, any, any> | undefined
 > = Omit<
   ServerLayoutParams<TProps, TInitialProps, TParent>,
-  'key' | 'isLayout' | 'getInitialProps'
+  | 'key'
+  | 'isLayout'
+  | 'getInitialProps'
+  | 'getStaticProps'
+  | 'getServerSideProps'
 > & {
   component: ComponentType<TProps>;
 };
@@ -164,6 +176,13 @@ export const makeLayout = <
   (layout as ServerLayout<TProps, TInitialProps, TParent>).getInitialProps = (
     initialParams as MakeServerLayoutInitialParams<TInitialProps>
   )?.getInitialProps;
+  (layout as ServerLayout<TProps, TInitialProps, TParent>).getStaticProps = (
+    initialParams as MakeServerLayoutInitialParams<TInitialProps>
+  )?.getStaticProps;
+  (layout as ServerLayout<TProps, TInitialProps, TParent>).getServerSideProps =
+    (
+      initialParams as MakeServerLayoutInitialParams<TInitialProps>
+    )?.getServerSideProps;
   (layout as ClientLayout<TProps, TInitialProps, TParent>).useInitialProps = (
     initialParams as MakeClientLayoutInitialParams<TInitialProps>
   )?.useInitialProps;
@@ -190,11 +209,12 @@ export type InitialProps<TInitialProps> = {
   error?: Error;
 };
 
+type LayoutRawInitialProps<TLayout extends Layout<any, any, any> | undefined> =
+  TLayout extends Layout<any, infer TInitialProps, any> ? TInitialProps : never;
+
 export type LayoutInitialProps<
   TLayout extends Layout<any, any, any> | undefined
-> = TLayout extends Layout<any, infer TInitialProps, any>
-  ? InitialProps<TInitialProps>
-  : never;
+> = InitialProps<LayoutRawInitialProps<TLayout>>;
 
 type Recursion = [never, 0, 1, 2, 3, 4, 5];
 
@@ -227,20 +247,21 @@ export const layoutHasGetInitialProps = <
   return hasInitialProps;
 };
 
-export const fetchGetInitialProps = async <
-  TLayout extends Layout<any, any, any> | undefined
+export const _fetchGetInitialProps = async <
+  TLayout extends Layout<any, any, any>
 >(
   layout: TLayout,
-  context: NextPageContext
+  getInitialProps: <TLayout2 extends ServerLayout<any, any, any>>(
+    layout: TLayout2
+  ) => Promise<LayoutRawInitialProps<TLayout2>> | undefined
 ): Promise<LayoutInitialPropsStack<TLayout>> => {
   const promises: Promise<any>[] = [];
 
-  let loopLayout: any = layout;
+  let loopLayout: Layout<any, any, any> = layout;
   while (!!loopLayout) {
     promises.push(
-      isServerLayout(loopLayout) && loopLayout.getInitialProps
-        ? loopLayout.getInitialProps(context)
-        : Promise.resolve({})
+      (isServerLayout(loopLayout) ? getInitialProps(loopLayout) : undefined) ??
+        Promise.resolve({})
     );
     loopLayout = loopLayout.parent;
   }
@@ -256,6 +277,33 @@ export const fetchGetInitialProps = async <
       error: wrapError(promise.reason),
     };
   }) as LayoutInitialPropsStack<TLayout>;
+};
+
+export const fetchGetInitialProps = <TLayout extends Layout<any, any, any>>(
+  layout: TLayout,
+  context: NextPageContext
+) => {
+  return _fetchGetInitialProps(layout, (l) => {
+    return l.getInitialProps?.(context);
+  });
+};
+
+export const fetchGetStaticProps = <TLayout extends Layout<any, any, any>>(
+  layout: TLayout,
+  context: GetStaticPropsContext
+) => {
+  return _fetchGetInitialProps(layout, (l) => {
+    return l.getStaticProps?.(context);
+  });
+};
+
+export const fetchGetServerSideProps = <TLayout extends Layout<any, any, any>>(
+  layout: TLayout,
+  context: GetServerSidePropsContext
+) => {
+  return _fetchGetInitialProps(layout, (l) => {
+    return l.getServerSideProps?.(context);
+  });
 };
 
 export const useLayoutInitialProps = <

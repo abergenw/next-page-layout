@@ -20,6 +20,7 @@ import {
   useLayoutPropsResolver,
 } from './LayoutPropsProvider';
 import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect';
+import { useRouter } from 'next/router';
 
 interface Props<TLayout extends Layout<any, any, any>> {
   layout: TLayout;
@@ -56,6 +57,7 @@ function _LayoutRenderer<TLayout extends Layout<any, any, any>>(
   props: Props<TLayout>
 ) {
   const { resolvedLayoutProps, clientSideInitialProps } = useLayoutProps();
+  const router = useRouter();
 
   useIsomorphicLayoutEffect(() => {
     lastLayoutRef.current = props.layout;
@@ -64,8 +66,9 @@ function _LayoutRenderer<TLayout extends Layout<any, any, any>>(
   // Only render LayoutResolver once for each layout to avoid infinite recursion when props are resolved.
   const layoutResolver = useMemo(() => {
     return <LayoutResolver {...props} key={props.layout.key} />;
+    // router is null while testing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.layout]);
+  }, [props.layout, router?.asPath]);
 
   const renderLayout = () => {
     if (resolvedLayoutProps && clientSideInitialProps) {

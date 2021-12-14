@@ -1,6 +1,10 @@
 import React, { ReactElement, ReactNode } from 'react';
 import { LayoutBaseProps } from './layout';
-import { NextPageContext } from 'next';
+import {
+  GetServerSidePropsContext,
+  GetStaticPropsContext,
+  NextPageContext,
+} from 'next';
 import { ErrorComponentProps } from './LayoutRenderer';
 import {
   createLayoutPropsContext,
@@ -14,6 +18,11 @@ export const mockPageContext: NextPageContext = {
   pathname: '',
   query: {},
 };
+
+export const mockGetServerSidePropsContext: GetServerSidePropsContext =
+  {} as any;
+
+export const mockGetStaticPropsContext: GetStaticPropsContext = {} as any;
 
 export interface ParentLayoutProps extends LayoutBaseProps {
   one: string;

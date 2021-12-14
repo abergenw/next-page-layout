@@ -5,7 +5,10 @@ import { NextComponentType, NextPageContext } from 'next';
 
 interface Props<TPage extends LayoutPage<any, any>> {
   page: TPage | NextComponentType<NextPageContext, any, any>;
-  initialProps: LayoutPageInitialPropsOf<TPage> | undefined;
+  initialProps:
+    | LayoutPageInitialPropsOf<TPage>
+    | { _plain: LayoutPageInitialPropsOf<TPage> }
+    | undefined;
   errorComponent?: ComponentType<ErrorComponentProps>;
   loadingComponent?: ComponentType;
 }
@@ -17,11 +20,17 @@ export function LayoutPageRenderer<TPage extends LayoutPage<any, any>>(
     return <props.page {...props.initialProps} />;
   }
 
+  const initialProps = props.initialProps
+    ? '_plain' in props.initialProps
+      ? props.initialProps._plain
+      : props.initialProps
+    : undefined;
+
   return (
     <LayoutRenderer
       layout={props.page.layout}
       layoutProps={{}}
-      initialProps={props.initialProps}
+      initialProps={initialProps}
       errorComponent={props.errorComponent}
       loadingComponent={props.loadingComponent}
     />
