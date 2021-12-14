@@ -1,7 +1,13 @@
-import React, { ReactNode } from 'react';
+import React, { ReactElement, ReactNode } from 'react';
 import { LayoutBaseProps } from './layout';
 import { NextPageContext } from 'next';
 import { ErrorComponentProps } from './LayoutRenderer';
+import {
+  createLayoutPropsContext,
+  LayoutPropsProvider,
+} from './LayoutPropsProvider';
+import { renderToString } from 'react-dom/server';
+import { create } from 'react-test-renderer';
 
 export const mockPageContext: NextPageContext = {
   AppTree: () => null,
@@ -70,4 +76,34 @@ export const sleep = async (ms: number): Promise<void> => {
       resolve();
     }, ms);
   });
+};
+
+export interface IsomorphicRenderer {
+  renderAndExpect: (element: ReactElement, expected: string[]) => void;
+}
+
+export const clientRenderer: IsomorphicRenderer = {
+  renderAndExpect: (element, expected) => {
+    const result = create(element);
+    const json = result.toJSON();
+    expect(Array.isArray(json) ? json : [json]).toEqual(expected);
+  },
+};
+
+export const ssrRenderer: IsomorphicRenderer = {
+  renderAndExpect: (element, expected) => {
+    const layoutPropsContext = createLayoutPropsContext();
+
+    renderToString(
+      <LayoutPropsProvider context={layoutPropsContext}>
+        {element}
+      </LayoutPropsProvider>
+    );
+    const result = renderToString(
+      <LayoutPropsProvider context={layoutPropsContext}>
+        {element}
+      </LayoutPropsProvider>
+    );
+    expect(result.split('<!-- -->')).toEqual(expected);
+  },
 };

@@ -25,3 +25,7 @@ export { LayoutPageRenderer } from './LayoutPageRenderer';
 
 export { LayoutRenderer } from './LayoutRenderer';
 export type { ErrorComponentProps } from './LayoutRenderer';
+
+export { prepareDocumentContext } from './ssr';
+
+export { wrapSwrInitialProps } from './utils';

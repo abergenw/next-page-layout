@@ -17,7 +17,9 @@ export interface BaseLayoutParams<
   parent?: TParent;
   useParentProps: (props: {
     initialProps: InitialProps<TInitialProps>;
-    layoutProps: InitialProps<LayoutSelfProps<TProps, TInitialProps>>;
+    layoutProps: InitialProps<
+      LayoutSelfProps<TProps, TInitialProps> & Partial<TInitialProps>
+    >;
     // The require functions are escape hatches which allow you to pass a loading/error state to the parent while still preserving type safety and inference.
     // If you need initialProps (data loaded) or layoutProps (passed by downstream layout) resolved before rendering the parent layout, use these.
     requireInitialProps: (
@@ -25,13 +27,15 @@ export interface BaseLayoutParams<
     ) => any;
     requireLayoutProps: (
       callback: (
-        layoutProps: LayoutSelfProps<TProps, TInitialProps>
+        layoutProps: LayoutSelfProps<TProps, TInitialProps> &
+          Partial<TInitialProps>
       ) => LayoutProps<TParent>
     ) => any;
     requireProps: (
       callback: (props: {
         initialProps: TInitialProps;
-        layoutProps: LayoutSelfProps<TProps, TInitialProps>;
+        layoutProps: LayoutSelfProps<TProps, TInitialProps> &
+          Partial<TInitialProps>;
       }) => LayoutProps<TParent>
     ) => any;
   }) => LayoutProps<TParent>;
@@ -82,6 +86,16 @@ export const isServerLayout = <
   layout: Layout<TProps, TInitialProps, TParent>
 ): layout is ServerLayout<TProps, TInitialProps, TParent> => {
   return !(layout as ClientLayout<any, any, any>).useInitialProps;
+};
+
+export const isClientLayout = <
+  TProps extends LayoutBaseProps,
+  TInitialProps extends Partial<TProps>,
+  TParent extends Layout<any, any, any> | undefined
+>(
+  layout: Layout<TProps, TInitialProps, TParent>
+): layout is ClientLayout<TProps, TInitialProps, TParent> => {
+  return !isServerLayout(layout);
 };
 
 export type MakeServerLayoutInitialParams<TInitialProps> = Pick<

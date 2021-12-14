@@ -1,4 +1,4 @@
-import { makeLayoutPage } from 'next-page-layout';
+import { makeLayoutPage, wrapSwrInitialProps } from 'next-page-layout';
 import useSWR from 'swr';
 import { sleep } from '../../components/utils';
 import React from 'react';
@@ -7,17 +7,12 @@ import { UseInitialPropsSubLayout } from '../../components/useinitialprops/usein
 export default makeLayoutPage(
   {
     useInitialProps: () => {
-      const result = useSWR('useInitialProps:page2', async () => {
-        await sleep(300);
-        return 'Page2';
-      });
-
-      return {
-        data: {
-          content: result.data,
-        },
-        loading: !result.data,
-      };
+      return wrapSwrInitialProps(
+        useSWR('useInitialProps:page2', async () => {
+          await sleep(300);
+          return { content: 'Page2' };
+        })
+      );
     },
   },
   {

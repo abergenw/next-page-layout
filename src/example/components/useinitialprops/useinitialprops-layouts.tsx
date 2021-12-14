@@ -1,4 +1,4 @@
-import { makeLayout } from 'next-page-layout';
+import { makeLayout, wrapSwrInitialProps } from 'next-page-layout';
 import React, { ReactNode } from 'react';
 import MainLayoutComponent from '../MainLayoutComponent';
 import { sleep } from '../utils';
@@ -14,17 +14,12 @@ interface MainLayoutProps {
 export const UseInitialPropsMainLayout = makeLayout(
   {
     useInitialProps: () => {
-      const result = useSWR('useInitialProps:parent', async () => {
-        await sleep(300);
-        return 'UseInitialProps';
-      });
-
-      return {
-        data: {
-          title: result.data,
-        },
-        loading: !result.data,
-      };
+      return wrapSwrInitialProps(
+        useSWR('useInitialProps:parent', async () => {
+          await sleep(300);
+          return { title: 'UseInitialProps' };
+        })
+      );
     },
   },
   {
@@ -85,22 +80,20 @@ interface SubLayoutProps {
 export const UseInitialPropsSubLayout = makeLayout(
   {
     useInitialProps: () => {
-      const result = useSWR('useInitialProps:child', async () => {
-        await sleep(300);
-        return 'UseInitialProps';
-      });
-
-      return {
-        data: {
-          defaultSubtitle: result.data,
-        },
-        loading: !result.data,
-      };
+      return wrapSwrInitialProps(
+        useSWR('useInitialProps:child', async () => {
+          await sleep(300);
+          return { defaultSubtitle: 'UseInitialProps' };
+        })
+      );
     },
   },
   {
     parent: UseInitialPropsMainLayout,
-    useParentProps: (props) => ({}),
+    useParentProps: (props) =>
+      props.requireProps(({ initialProps, layoutProps }) => ({
+        title: `${initialProps.defaultSubtitle}: ${layoutProps.subtitle}`,
+      })),
     component: (props: SubLayoutProps) => {
       return (
         <SubLayoutComponent

@@ -65,7 +65,10 @@ export const GetInitialPropsSubLayout = makeLayout(
   },
   {
     parent: GetInitialPropsMainLayout,
-    useParentProps: (props) => ({}),
+    useParentProps: (props) =>
+      props.requireProps(({ initialProps, layoutProps }) => ({
+        title: `${initialProps.defaultSubtitle}: ${layoutProps.subtitle}`,
+      })),
     component: (props: SubLayoutProps) => {
       return (
         <SubLayoutComponent

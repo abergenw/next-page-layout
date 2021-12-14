@@ -1,6 +1,16 @@
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  testRegex: ['/.*\\.test\\.(ts|tsx)$'],
-  timers: 'fake',
+  projects: [
+    {
+      preset: 'ts-jest',
+      testEnvironment: 'jsdom',
+      testRegex: ['/.*\\.test\\.(ts|tsx)$'],
+      timers: 'fake',
+    },
+    {
+      preset: 'ts-jest',
+      testEnvironment: 'node',
+      testRegex: ['/.*\\.test\\.node\\.(ts|tsx)$'],
+      timers: 'fake',
+    },
+  ],
 };

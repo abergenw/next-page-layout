@@ -5,9 +5,9 @@ import { LayoutRenderer } from './LayoutRenderer';
 import {
   ChildLayout,
   ChildLayoutProps,
+  clientRenderer,
   EmptyLayout,
   ErrorComponent,
-  GrandChildLayout,
   LoadingComponent,
   mockPageContext,
   ParentLayout,
@@ -15,319 +15,11 @@ import {
   sleep,
 } from './test-utils';
 import useSWR from 'swr';
+import { commonLayoutTests } from './layout.test.common';
+import { wrapSwrInitialProps } from './utils';
 
 describe('layout', () => {
-  test('with parent and child', async () => {
-    const Parent = makeLayout(undefined, {
-      component: ParentLayout,
-      useParentProps: (props) => ({}),
-    });
-
-    const parent = create(
-      <LayoutRenderer
-        layout={Parent}
-        layoutProps={{ one: 'one', two: 2 }}
-        initialProps={await fetchGetInitialProps(Parent, mockPageContext)}
-      >
-        content
-      </LayoutRenderer>
-    );
-    expect(parent.toJSON()).toEqual(['one', '2', 'content']);
-
-    const Child = makeLayout(undefined, {
-      component: ChildLayout,
-      parent: Parent,
-      useParentProps: (props) => ({
-        one: 'one',
-        two: 2,
-      }),
-    });
-
-    const child = create(
-      <LayoutRenderer
-        layout={Child}
-        layoutProps={{ three: 'three', four: 4 }}
-        initialProps={await fetchGetInitialProps(Child, mockPageContext)}
-      >
-        content
-      </LayoutRenderer>
-    );
-    expect(child.toJSON()).toEqual(['one', '2', 'three', '4', 'content']);
-
-    // renderToString(
-    //   <LayoutRenderer
-    //     layout={Child}
-    //     layoutProps={{ three: 'three', four: 4 }}
-    //     initialProps={await fetchGetInitialProps(Child, mockPageContext)}
-    //   >
-    //     content
-    //   </LayoutRenderer>
-    // );
-
-    const GrandChild = makeLayout(undefined, {
-      component: GrandChildLayout,
-      parent: Child,
-      useParentProps: (props) => ({ three: 'three', four: 4 }),
-    });
-
-    const grandChild = create(
-      <LayoutRenderer
-        layout={GrandChild}
-        layoutProps={{
-          five: 'five',
-        }}
-        initialProps={await fetchGetInitialProps(GrandChild, mockPageContext)}
-      >
-        content
-      </LayoutRenderer>
-    );
-    expect(grandChild.toJSON()).toEqual([
-      'one',
-      '2',
-      'three',
-      '4',
-      'five',
-      'content',
-    ]);
-  });
-
-  test('with parent and child, overriding parent props', async () => {
-    const Parent = makeLayout(undefined, {
-      component: ParentLayout,
-      useParentProps: (props) => ({}),
-    });
-
-    const Child = makeLayout(undefined, {
-      component: ChildLayout,
-      parent: Parent,
-      useParentProps: (props) =>
-        props.requireLayoutProps((layoutProps) => ({
-          one: layoutProps.one ?? 'one',
-          two: 2,
-        })),
-    });
-
-    const child = create(
-      <LayoutRenderer
-        layout={Child}
-        layoutProps={{ one: 'overrideOne', three: 'three', four: 4 }}
-        initialProps={await fetchGetInitialProps(Child, mockPageContext)}
-      >
-        content
-      </LayoutRenderer>
-    );
-    expect(child.toJSON()).toEqual([
-      'overrideOne',
-      '2',
-      'three',
-      '4',
-      'content',
-    ]);
-
-    const GrandChild = makeLayout(undefined, {
-      component: GrandChildLayout,
-      parent: Child,
-      useParentProps: (props) =>
-        props.requireLayoutProps((layoutProps) => ({
-          one: layoutProps.one ?? 'one',
-          three: layoutProps.three ?? 'three',
-          four: 4,
-        })),
-    });
-
-    const grandChild = create(
-      <LayoutRenderer
-        layout={GrandChild}
-        layoutProps={{
-          one: 'overrideOne',
-          three: 'overrideThree',
-          five: 'five',
-        }}
-        initialProps={await fetchGetInitialProps(GrandChild, mockPageContext)}
-      >
-        content
-      </LayoutRenderer>
-    );
-    expect(grandChild.toJSON()).toEqual([
-      'overrideOne',
-      '2',
-      'overrideThree',
-      '4',
-      'five',
-      'content',
-    ]);
-  });
-
-  test('with getInitialProps', async () => {
-    const Parent = makeLayout(
-      {
-        getInitialProps: async (context) => ({
-          one: 'initialOne',
-        }),
-      },
-      {
-        component: ParentLayout,
-        useParentProps: (props) => ({}),
-      }
-    );
-
-    const Child = makeLayout(
-      {
-        getInitialProps: async (context) => ({
-          three: 'initialThree',
-        }),
-      },
-      {
-        component: ChildLayout,
-        parent: Parent,
-        useParentProps: (props) =>
-          props.requireLayoutProps((layoutProps) => ({
-            two: layoutProps.four,
-          })),
-      }
-    );
-
-    const child = create(
-      <LayoutRenderer
-        layout={Child}
-        layoutProps={{ four: 4 }}
-        initialProps={await fetchGetInitialProps(Child, mockPageContext)}
-      >
-        content
-      </LayoutRenderer>
-    );
-    expect(child.toJSON()).toEqual([
-      'initialOne',
-      '4',
-      'initialThree',
-      '4',
-      'content',
-    ]);
-
-    const GrandChild = makeLayout(
-      {
-        getInitialProps: async (context) => ({
-          five: 'initialFive',
-        }),
-      },
-      {
-        component: GrandChildLayout,
-        parent: Child,
-        useParentProps: (props) => ({
-          four: 4,
-        }),
-      }
-    );
-
-    const grandChild = create(
-      <LayoutRenderer
-        layout={GrandChild}
-        layoutProps={{}}
-        initialProps={await fetchGetInitialProps(GrandChild, mockPageContext)}
-      >
-        content
-      </LayoutRenderer>
-    );
-
-    expect(grandChild.toJSON()).toEqual([
-      'initialOne',
-      '4',
-      'initialThree',
-      '4',
-      'initialFive',
-      'content',
-    ]);
-  });
-
-  test('with getInitialProps error', async () => {
-    const Parent = makeLayout(
-      {
-        getInitialProps: async (context) => ({
-          one: 'one',
-          two: 2,
-        }),
-      },
-      {
-        component: ParentLayout,
-        useParentProps: (props) => ({}),
-      }
-    );
-
-    const ChildWithError = makeLayout(
-      {
-        getInitialProps: async (context) => {
-          throw new Error('child');
-          return {
-            three: 'three',
-            four: 4,
-          };
-        },
-      },
-      {
-        component: ChildLayout,
-        parent: Parent,
-        useParentProps: (props) => ({}),
-      }
-    );
-
-    const childWithError = create(
-      <LayoutRenderer
-        layout={ChildWithError}
-        layoutProps={{}}
-        initialProps={
-          await fetchGetInitialProps(ChildWithError, mockPageContext)
-        }
-        errorComponent={ErrorComponent}
-      >
-        content
-      </LayoutRenderer>
-    );
-    expect(childWithError.toJSON()).toEqual(['one', '2', 'child']);
-
-    const ParentWithError = makeLayout(
-      {
-        getInitialProps: async (context) => {
-          throw new Error('parent');
-          return {
-            one: 'one',
-            two: 2,
-          };
-        },
-      },
-      {
-        component: ParentLayout,
-        useParentProps: (props) => ({}),
-      }
-    );
-
-    const Child = makeLayout(
-      {
-        getInitialProps: async (context) => {
-          return {
-            three: 'three',
-            four: 4,
-          };
-        },
-      },
-      {
-        component: ChildLayout,
-        parent: ParentWithError,
-        useParentProps: (props) => ({}),
-      }
-    );
-
-    const parentWithError = create(
-      <LayoutRenderer
-        layout={Child}
-        layoutProps={{}}
-        initialProps={await fetchGetInitialProps(Child, mockPageContext)}
-        errorComponent={ErrorComponent}
-      >
-        content
-      </LayoutRenderer>
-    );
-    expect(parentWithError.toJSON()).toEqual('parent');
-  });
+  commonLayoutTests(clientRenderer);
 
   test('stays mounted', async () => {
     let parentMountedTimes = 0;
@@ -446,20 +138,12 @@ describe('layout', () => {
     const Parent = makeLayout(
       {
         useInitialProps: () => {
-          const result = useSWR(
-            'layoutWithUseInitialProps:parent',
-            async () => {
+          return wrapSwrInitialProps(
+            useSWR('layoutWithUseInitialProps:parent', async () => {
               await sleep(100);
-              return 'initialOne';
-            }
+              return { one: 'initialOne' };
+            })
           );
-
-          return {
-            data: {
-              one: result.data,
-            },
-            loading: !result.data,
-          };
         },
       },
       {
@@ -497,21 +181,12 @@ describe('layout', () => {
     const Child1 = makeLayout(
       {
         useInitialProps: () => {
-          const result = useSWR(
-            'layoutWithUseInitialProps:child1',
-            async () => {
+          return wrapSwrInitialProps(
+            useSWR('layoutWithUseInitialProps:child1', async () => {
               await sleep(100);
-              return 'child1';
-            }
+              return { three: 'child1', four: 4 };
+            })
           );
-
-          return {
-            data: {
-              three: result.data,
-              four: 4,
-            },
-            loading: !result.data,
-          };
         },
       },
       {
@@ -556,21 +231,12 @@ describe('layout', () => {
     const Child2 = makeLayout(
       {
         useInitialProps: () => {
-          const result = useSWR(
-            'layoutWithUseInitialProps:child2',
-            async () => {
+          return wrapSwrInitialProps(
+            useSWR('layoutWithUseInitialProps:child2', async () => {
               await sleep(100);
-              return 'child2';
-            }
+              return { three: 'child2', four: 44 };
+            })
           );
-
-          return {
-            data: {
-              three: result.data,
-              four: 44,
-            },
-            loading: !result.data,
-          };
         },
       },
       {
@@ -670,21 +336,15 @@ describe('layout', () => {
     const Child1 = makeLayout(
       {
         useInitialProps: () => {
-          const result = useSWR(
-            'layoutWithGetInitialPropsAndUseInitialProps:child1',
-            async () => {
-              await sleep(100);
-              return 'child';
-            }
+          return wrapSwrInitialProps(
+            useSWR(
+              'layoutWithGetInitialPropsAndUseInitialProps:child1',
+              async () => {
+                await sleep(100);
+                return { three: 'child', four: 4 };
+              }
+            )
           );
-
-          return {
-            data: {
-              three: result.data,
-              four: 4,
-            },
-            loading: !result.data,
-          };
         },
       },
       {

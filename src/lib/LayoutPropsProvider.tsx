@@ -49,7 +49,7 @@ export const useLayoutPropsResolver = (): LayoutPropsResolverContext => {
 };
 
 export const createLayoutPropsContext = (
-  onResolveComplete?: () => void
+  override?: Partial<LayoutPropsContext & LayoutPropsResolverContext>
 ): LayoutPropsContext & LayoutPropsResolverContext => {
   const context: LayoutPropsContext & LayoutPropsResolverContext = {
     resolvedLayoutProps: [],
@@ -61,11 +61,10 @@ export const createLayoutPropsContext = (
       context.resolvedLayoutProps?.splice(0);
       context.clientSideInitialProps = initialProps;
     },
-    onResolveComplete:
-      onResolveComplete ??
-      (() => {
-        throw new Error('Override me');
-      }),
+    onResolveComplete: () => {
+      throw new Error('Override me');
+    },
+    ...override,
   };
 
   return context;
@@ -78,20 +77,23 @@ interface LayoutPropsProviderProps {
 }
 
 export function LayoutPropsProvider(props: LayoutPropsProviderProps) {
-  const parentContext = useContext(layoutPropsContext) ?? props.context;
-  const parentResolverContext =
-    useContext(layoutPropsResolverContext) ?? props.context;
+  const parentContext = useContext(layoutPropsContext);
+  const parentResolverContext = useContext(layoutPropsResolverContext);
 
   const localContext = useMemo<LayoutPropsContext & LayoutPropsResolverContext>(
     () => {
-      return createLayoutPropsContext(() => {
-        setResolvedLocalContext((prev) => ({
-          ...prev,
-          resolvedLayoutProps: [...(localContext.resolvedLayoutProps ?? [])],
-          clientSideInitialProps: [
-            ...(localContext.clientSideInitialProps ?? []),
-          ],
-        }));
+      return createLayoutPropsContext({
+        resolvedLayoutProps: [],
+        clientSideInitialProps: undefined,
+        onResolveComplete: () => {
+          setResolvedLocalContext((prev) => ({
+            ...prev,
+            resolvedLayoutProps: [...(localContext.resolvedLayoutProps ?? [])],
+            clientSideInitialProps: [
+              ...(localContext.clientSideInitialProps ?? []),
+            ],
+          }));
+        },
       });
     },
     // eslint-disable-next-line
@@ -100,7 +102,7 @@ export function LayoutPropsProvider(props: LayoutPropsProviderProps) {
 
   const [resolvedLocalContext, setResolvedLocalContext] =
     useStateBacked<LayoutPropsContext>(
-      () => createLayoutPropsContext(),
+      () => props.context ?? parentContext ?? localContext,
       (prev) => createLayoutPropsContext(),
       [props.layout]
     );
@@ -111,10 +113,10 @@ export function LayoutPropsProvider(props: LayoutPropsProviderProps) {
 
   return (
     <layoutPropsResolverContext.Provider
-      value={parentResolverContext ?? localContext}
+      value={props.context ?? parentResolverContext ?? localContext}
     >
       <layoutPropsContext.Provider
-        value={parentContext ?? resolvedLocalContext}
+        value={props.context ?? parentContext ?? resolvedLocalContext}
       >
         {props.children}
       </layoutPropsContext.Provider>

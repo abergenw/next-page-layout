@@ -2,13 +2,12 @@ import React, {
   ComponentType,
   ReactElement,
   ReactNode,
-  useLayoutEffect,
   useMemo,
   useRef,
 } from 'react';
 import {
   InitialProps,
-  isServerLayout,
+  isClientLayout,
   Layout,
   LayoutInitialPropsStack,
   LayoutProps,
@@ -20,6 +19,7 @@ import {
   useLayoutProps,
   useLayoutPropsResolver,
 } from './LayoutPropsProvider';
+import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect';
 
 interface Props<TLayout extends Layout<any, any, any>> {
   layout: TLayout;
@@ -57,7 +57,7 @@ function _LayoutRenderer<TLayout extends Layout<any, any, any>>(
 ) {
   const { resolvedLayoutProps, clientSideInitialProps } = useLayoutProps();
 
-  useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     lastLayoutRef.current = props.layout;
   }, [props.layout]);
 
@@ -85,6 +85,7 @@ function _LayoutRenderer<TLayout extends Layout<any, any, any>>(
   const lastLayoutRef = useRef<typeof props.layout>(props.layout);
   const renderedLayoutRef = useRef<ReactElement>();
 
+  // No point re-rendering actual layout if it hasn't changed.
   if (lastLayoutRef.current === props.layout) {
     renderedLayoutRef.current = renderLayout();
   }
@@ -105,7 +106,7 @@ function LayoutResolver<TLayout extends Layout<any, any, any>>(
   const { resolveClientSideInitialProps, onResolveComplete } =
     useLayoutPropsResolver();
   resolveClientSideInitialProps(clientSideInitialProps);
-  useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     onResolveComplete();
   });
 
@@ -154,9 +155,9 @@ function RecursiveLayoutResolver<TLayout extends Layout<any, any, any>>(
   const { resolveLayoutProps } = useLayoutPropsResolver();
   resolveLayoutProps(props.layoutProps);
 
-  interface RequireInitialProps extends InitialProps<any> {
+  type RequireInitialProps = InitialProps<any> & {
     _isInitialProps: true;
-  }
+  };
 
   const isInitialProps = (result: any): result is InitialProps<any> =>
     (result as RequireInitialProps)._isInitialProps;
@@ -255,7 +256,7 @@ function RecursiveLayout<TLayout extends Layout<any, any, any>>(
       );
     } else {
       const LoadingComponent =
-        (!isServerLayout(props.layout)
+        (isClientLayout(props.layout)
           ? props.layout.loadingComponent
           : undefined) ?? props.loadingComponent;
 
