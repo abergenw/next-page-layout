@@ -5,8 +5,8 @@ A type safe, zero dependency layout solution with data fetching capabilities for
 **Features**
 
 - Persisted layout state when navigating between pages \*
-- Server-side layout data population (**getInitialProps**)
-- Client-side layout data population (**useInitialProps**)
+- Nested server-side layout data population (**getInitialProps**, **getServerSideProps** and **getStaticProps**)
+- Nested client-side layout data population (**useInitialProps**)
 - Layout hierarchy with support for passing props from child to parent
 - A type safe API using Typescript
 
@@ -90,6 +90,16 @@ interface LayoutProps {
 
 export const Layout = makeLayout(
   {
+    // You can use any of:
+    //
+    // getInitialProps
+    // getServerSideProps
+    // getStaticProps
+    //
+    // But note that you cannot mix&match layouts
+    // with different server-side data fetching methods.
+    //
+    // See example app.
     getInitialProps: async (context) => {
       await sleep(300);
       return {
