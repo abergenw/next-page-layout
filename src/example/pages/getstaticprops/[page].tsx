@@ -8,7 +8,6 @@ const Page = makeLayoutPage(
   {
     getStaticProps: async (context) => {
       await sleep(300);
-      console.log('GET STATIC', context.params);
       return {
         content: context.params?.page as string,
       };
