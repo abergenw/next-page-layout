@@ -23,6 +23,8 @@ npm i next-page-layout
 2. Wrap page rendering in your custom App with `<LayoutPageRenderer>`:
 
 ```tsx
+import { LayoutPageRenderer } from 'next-page-layout';
+
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <LayoutPageRenderer
@@ -36,7 +38,27 @@ export default function App({ Component, pageProps }: AppProps) {
 ```
 
 3. Define layouts and pages using the exported `makeLayout()` and `makeLayoutPage()` functions.
-4. Clone the code and run `npm run example` to see the included example Nextjs app in action.
+4. To properly support server-side rendering, instrument page rendering in your custom Document
+   with `prepareDocumentContext()`:
+
+```tsx
+import { prepareDocumentContext } from 'next-page-layout';
+
+export default class CustomDocument extends Document {
+  static async getInitialProps(ctx: DocumentContext) {
+    await prepareDocumentContext(ctx);
+    return Document.getInitialProps(ctx);
+  }
+}
+```
+
+**NOTE: This will cause a React hydration warning in development** but it _should_ be safe to ignore this.
+
+The reason this happens is that when SSRing, we need to render the page twice for `useParentProps()` described below to
+work. The resulting HTML is passed to the client, which sees a mismatch when composing the initial component tree. This
+is instantly corrected with `useLayoutEffect()` which is why it should be safe to ignore this warning.
+
+5. Clone the code and run `npm run example` to see the included example Nextjs app in action.
 
 ## Background
 
@@ -59,6 +81,8 @@ Nextjs layouts solve the remount issue but it's far from a perfect solution:
 Layouts are created with `makeLayout()`. Consider this example:
 
 ```tsx
+import { makeLayout } from 'next-page-layout';
+
 interface LayoutProps {
   title: string;
   children: ReactNode;
@@ -95,6 +119,8 @@ rendering, **getInitialProps** will run on the server similarly to how it would 
 To render this layout as part of a page, we need to export `makeLayoutPage()` in a regular Nextjs page file:
 
 ```tsx
+import { makeLayoutPage } from 'next-page-layout';
+
 export default makeLayoutPage(
   {
     getInitialProps: async (context) => {
@@ -123,6 +149,8 @@ overridden _title_). This is all type safe thanks to Typescript and type inferen
 Nested layouts are supported by passing the parent layout when calling `makeLayoutPage()`:
 
 ```tsx
+import { makeLayout } from 'next-page-layout';
+
 interface ChildLayoutProps {
   subtitle: string;
   children: ReactNode;
@@ -172,6 +200,13 @@ use [SWR](https://swr.vercel.app/) to fetch data, but any solution with a simila
 e.g. [Apollo GraphQL and useQuery](https://www.apollographql.com/docs/react/data/queries/)).
 
 ```tsx
+import {
+  makeLayout,
+  makeLayoutPage,
+  wrapSwrInitialProps,
+} from 'next-page-layout';
+import useSWR from 'swr';
+
 // Parent layout.
 
 interface LayoutProps {
@@ -182,17 +217,12 @@ interface LayoutProps {
 export const Layout = makeLayout(
   {
     useInitialProps: () => {
-      const result = useSWR('parent', async () => {
-        await sleep(300);
-        return 'I am a title!';
-      });
-
-      return {
-        data: {
-          title: result.data,
-        },
-        loading: !result.data,
-      };
+      return wrapSwrInitialProps(
+        useSWR('parent', async () => {
+          await sleep(300);
+          return { title: 'I am a title!' };
+        })
+      );
     },
   },
   {
@@ -218,17 +248,12 @@ interface ChildLayoutProps {
 export const ChildLayout = makeLayout(
   {
     useInitialProps: () => {
-      const result = useSWR('child', async () => {
-        await sleep(300);
-        return 'I am a subtitle!';
-      });
-
-      return {
-        data: {
-          subtitle: result.data,
-        },
-        loading: !result.data,
-      };
+      return wrapSwrInitialProps(
+        useSWR('child', async () => {
+          await sleep(300);
+          return { subtitle: 'I am a subtitle!' };
+        })
+      );
     },
   },
   {
@@ -250,17 +275,12 @@ export const ChildLayout = makeLayout(
 export default makeLayoutPage(
   {
     useInitialProps: () => {
-      const result = useSWR('page', async () => {
-        await sleep(300);
-        return 'Page';
-      });
-
-      return {
-        data: {
-          content: result.data,
-        },
-        loading: !result.data,
-      };
+      return wrapSwrInitialProps(
+        useSWR('page', async () => {
+          await sleep(300);
+          return { content: 'Page' };
+        })
+      );
     },
   },
   {
@@ -347,20 +367,18 @@ Here's an example of the latter, using the page in our previous example, but pas
 parent:
 
 ```tsx
+import { makeLayoutPage, wrapSwrInitialProps } from 'next-page-layout';
+import useSWR from 'swr';
+
 export default makeLayoutPage(
   {
     useInitialProps: () => {
-      const result = useSWR('page', async () => {
-        await sleep(300);
-        return 'Page';
-      });
-
-      return {
-        data: {
-          content: result.data,
-        },
-        loading: !result.data,
-      };
+      return wrapSwrInitialProps(
+        useSWR('page', async () => {
+          await sleep(300);
+          return { content: 'Page' };
+        })
+      );
     },
   },
   {
