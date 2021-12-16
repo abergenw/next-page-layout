@@ -54,16 +54,23 @@ export const createLayoutPropsContext = (
   override?: Partial<LayoutPropsContext & LayoutPropsResolverContext>
 ): LayoutPropsContext & LayoutPropsResolverContext => {
   const context: LayoutPropsContext & LayoutPropsResolverContext = {
-    resolvedLayoutProps: [],
+    resolvedLayoutProps: undefined,
     resolveLayoutProps: (layoutProps) => {
-      context.resolvedLayoutProps?.unshift(layoutProps);
+      if (!context.resolvedLayoutProps) {
+        context.resolvedLayoutProps = [];
+      }
+      context.resolvedLayoutProps.unshift(layoutProps);
     },
-    resolvedRenderLayoutProps: [],
+    resolvedRenderLayoutProps: undefined,
     resolveRenderLayoutProps: (layoutProps) => {
-      context.resolvedRenderLayoutProps?.push(layoutProps);
+      if (!context.resolvedRenderLayoutProps) {
+        context.resolvedRenderLayoutProps = [];
+      }
+      context.resolvedRenderLayoutProps.push(layoutProps);
     },
     clientSideInitialProps: undefined,
     resolveClientSideInitialProps: (initialProps) => {
+      context.resolvedRenderLayoutProps?.splice(0);
       context.resolvedLayoutProps?.splice(0);
       context.clientSideInitialProps = initialProps;
     },
@@ -89,9 +96,6 @@ export function LayoutPropsProvider(props: LayoutPropsProviderProps) {
   const localContext = useMemo<LayoutPropsContext & LayoutPropsResolverContext>(
     () => {
       return createLayoutPropsContext({
-        resolvedLayoutProps: [],
-        resolvedRenderLayoutProps: [],
-        clientSideInitialProps: undefined,
         onResolveComplete: () => {
           setResolvedLocalContext((prev) => ({
             ...prev,
