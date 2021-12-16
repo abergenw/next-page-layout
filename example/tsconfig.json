@@ -20,7 +20,7 @@
     "baseUrl": ".",
     "paths": {
       "next-page-layout": [
-        "../lib/index"
+        "../src/index"
       ]
     },
     "incremental": true

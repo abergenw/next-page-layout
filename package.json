@@ -30,12 +30,12 @@
   "scripts": {
     "prebuild": "npm run clean",
     "build": "npm run compile && npm run lint && tsc --build tsconfig.build.json",
-    "compile": "tsc && tsc --build src/example/tsconfig.json --incremental false",
-    "lint": "eslint --ext .ts,.tsx src",
+    "compile": "tsc && tsc --build example/tsconfig.json --incremental false",
+    "lint": "eslint --ext .ts,.tsx src && eslint --ext .ts,.tsx example",
     "test": "jest --no-watchman",
     "clean": "rimraf -r dist",
-    "example": "next dev ./src/example",
-    "build-example": "next build ./src/example"
+    "example": "next dev ./example",
+    "build-example": "next build ./example"
   },
   "devDependencies": {
     "@testing-library/react": "^12.1.2",
