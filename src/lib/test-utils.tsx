@@ -109,7 +109,12 @@ export const ssrRenderer: IsomorphicRenderer = {
       </LayoutPropsProvider>
     );
     const result = renderToString(
-      <LayoutPropsProvider context={layoutPropsContext}>
+      <LayoutPropsProvider
+        context={{
+          ...layoutPropsContext,
+          resolvedLayoutProps: layoutPropsContext.resolvedRenderLayoutProps,
+        }}
+      >
         {element}
       </LayoutPropsProvider>
     );

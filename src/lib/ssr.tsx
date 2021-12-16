@@ -34,7 +34,13 @@ export const prepareDocumentContext = async (ctx: DocumentContext) => {
         const App = (options as any)?.enhanceApp?.(OriginalApp) ?? OriginalApp;
         return function EnhancedApp(props) {
           return (
-            <LayoutPropsProvider context={layoutPropsContext}>
+            <LayoutPropsProvider
+              context={{
+                ...layoutPropsContext,
+                resolvedLayoutProps:
+                  layoutPropsContext.resolvedRenderLayoutProps,
+              }}
+            >
               <App {...props} />
             </LayoutPropsProvider>
           );

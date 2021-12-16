@@ -46,18 +46,27 @@ export class RequireParentPropsError extends Error {
 export function LayoutRenderer<TLayout extends Layout<any, any, any>>(
   props: Props<TLayout>
 ) {
+  const router = useRouter();
+  // router is null while testing.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const resolveMemoKey = useMemo(
+    () => `${props.layout.key}:${router?.asPath}`,
+    [props.layout, router?.asPath]
+  );
+
   return (
-    <LayoutPropsProvider layout={props.layout}>
-      <_LayoutRenderer {...props} />
+    <LayoutPropsProvider resolveMemoKey={resolveMemoKey}>
+      <_LayoutRenderer {...props} resolveMemoKey={resolveMemoKey} />
     </LayoutPropsProvider>
   );
 }
 
 function _LayoutRenderer<TLayout extends Layout<any, any, any>>(
-  props: Props<TLayout>
+  props: Props<TLayout> & {
+    resolveMemoKey: string;
+  }
 ) {
   const { resolvedLayoutProps, clientSideInitialProps } = useLayoutProps();
-  const router = useRouter();
 
   useIsomorphicLayoutEffect(() => {
     lastLayoutRef.current = props.layout;
@@ -65,10 +74,9 @@ function _LayoutRenderer<TLayout extends Layout<any, any, any>>(
 
   // Only render LayoutResolver once for each layout to avoid infinite recursion when props are resolved.
   const layoutResolver = useMemo(() => {
-    return <LayoutResolver {...props} key={props.layout.key} />;
-    // router is null while testing.
+    return <LayoutResolver {...props} key={props.resolveMemoKey} />;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.layout, router?.asPath]);
+  }, [props.resolveMemoKey]);
 
   const renderLayout = () => {
     if (resolvedLayoutProps && clientSideInitialProps) {
@@ -155,8 +163,14 @@ function RecursiveLayoutResolver<TLayout extends Layout<any, any, any>>(
 
   const initialProps = resolveInitialProps(props);
 
-  const { resolveLayoutProps } = useLayoutPropsResolver();
-  resolveLayoutProps(props.layoutProps);
+  const { resolveLayoutProps, resolveRenderLayoutProps } =
+    useLayoutPropsResolver();
+
+  // Resolving props twice, once during render pass and once after mount.
+  resolveRenderLayoutProps(props.layoutProps);
+  useIsomorphicLayoutEffect(() => {
+    resolveLayoutProps(props.layoutProps);
+  });
 
   type RequireInitialProps = InitialProps<any> & {
     _isInitialProps: true;

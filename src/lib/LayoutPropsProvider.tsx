@@ -9,18 +9,20 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { InitialProps, Layout, LayoutInitialPropsStack } from './layout';
+import { InitialProps, LayoutInitialPropsStack } from './layout';
 
 export interface LayoutPropsContext {
   resolvedLayoutProps: InitialProps<any>[] | undefined;
+  resolvedRenderLayoutProps: InitialProps<any>[] | undefined;
   clientSideInitialProps: LayoutInitialPropsStack<any> | undefined;
 }
 
 export interface LayoutPropsResolverContext {
+  resolveLayoutProps: (layoutProps: InitialProps<any>) => void;
+  resolveRenderLayoutProps: (layoutProps: InitialProps<any>) => void;
   resolveClientSideInitialProps: (
     initialProps: LayoutInitialPropsStack<any>
   ) => void;
-  resolveLayoutProps: (layoutProps: InitialProps<any>) => void;
   onResolveComplete: () => void;
 }
 
@@ -54,7 +56,11 @@ export const createLayoutPropsContext = (
   const context: LayoutPropsContext & LayoutPropsResolverContext = {
     resolvedLayoutProps: [],
     resolveLayoutProps: (layoutProps) => {
-      context.resolvedLayoutProps?.push(layoutProps);
+      context.resolvedLayoutProps?.unshift(layoutProps);
+    },
+    resolvedRenderLayoutProps: [],
+    resolveRenderLayoutProps: (layoutProps) => {
+      context.resolvedRenderLayoutProps?.push(layoutProps);
     },
     clientSideInitialProps: undefined,
     resolveClientSideInitialProps: (initialProps) => {
@@ -73,7 +79,7 @@ export const createLayoutPropsContext = (
 interface LayoutPropsProviderProps {
   children: ReactNode;
   context?: LayoutPropsContext & LayoutPropsResolverContext;
-  layout?: Layout<any, any, any>;
+  resolveMemoKey?: string;
 }
 
 export function LayoutPropsProvider(props: LayoutPropsProviderProps) {
@@ -84,6 +90,7 @@ export function LayoutPropsProvider(props: LayoutPropsProviderProps) {
     () => {
       return createLayoutPropsContext({
         resolvedLayoutProps: [],
+        resolvedRenderLayoutProps: [],
         clientSideInitialProps: undefined,
         onResolveComplete: () => {
           setResolvedLocalContext((prev) => ({
@@ -97,14 +104,14 @@ export function LayoutPropsProvider(props: LayoutPropsProviderProps) {
       });
     },
     // eslint-disable-next-line
-    [props.layout]
+    [props.resolveMemoKey]
   );
 
   const [resolvedLocalContext, setResolvedLocalContext] =
     useStateBacked<LayoutPropsContext>(
       () => props.context ?? parentContext ?? localContext,
       (prev) => createLayoutPropsContext(),
-      [props.layout]
+      [props.resolveMemoKey]
     );
 
   if (parentContext) {
@@ -124,42 +131,13 @@ export function LayoutPropsProvider(props: LayoutPropsProviderProps) {
   );
 }
 
-export const useMemoInitial = <T,>(
-  initial: T,
-  factory: () => T,
-  deps: DependencyList | undefined
-): T => {
-  const isInitial = useRef(true);
-
-  const result = useMemo(() => {
-    if (isInitial.current) {
-      return initial;
-    }
-    return factory();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
-
-  isInitial.current = false;
-
-  return result;
-};
-
 const useStateBacked = <T,>(
   init: () => T,
   update: (prev: T) => T,
   deps: DependencyList
 ): [T, Dispatch<SetStateAction<T>>] => {
   const [stateValue, setStateValue] = useState<T>(init);
-  const [_ignored, forceUpdate] = useState<any>();
   const value = useRef(stateValue);
-
-  useMemoInitial(
-    null,
-    () => {
-      value.current = update(value.current);
-    },
-    deps
-  );
 
   return [
     value.current,
@@ -172,7 +150,6 @@ const useStateBacked = <T,>(
       }
       value.current = newValue;
       setStateValue(newValue);
-      forceUpdate({});
     },
   ];
 };
