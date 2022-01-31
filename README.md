@@ -5,12 +5,35 @@ A type safe, zero dependency layout solution with data fetching capabilities for
 **Features**
 
 - Persisted layout state when navigating between pages \*
-- Nested server-side layout data population (**getInitialProps**, **getServerSideProps** and **getStaticProps**)
-- Nested client-side layout data population (**useInitialProps**)
-- Layout hierarchy with support for passing props from child to parent
+- Server-side layout data population with the usual suspects (**getInitialProps**, **getServerSideProps** and **
+  getStaticProps**)
+- Client-side layout data population (**"useInitialProps"**)
+- Nested layouts with independent data requirements running in parallel
 - A type safe API using Typescript
 
 <sub>\* Similar to [layouts](https://nextjs.org/docs/basic-features/layouts) recently added to Nextjs.</sub>
+
+## Current status
+
+This library is fairly new and doesn't have a large user base yet but I'm currently running several applications in
+production using this lib and it's **working like a charm**. I suggest you give it a try and let me know how it works out -
+I am commited to maintaining this lib.
+
+## Background
+
+Pages in Nextjs don't come with a hierarchy (like e.g. https://reactrouter.com/). If you want to render 2 pages with a
+shared layout, this layout must be rendered individually by both pages. By default this means that the shared layout
+will **remount** whenever navigating between the pages (as the top-level page component changes). This has been a
+recurring topic in the community and was recently addressed by Nextjs when they
+introduced [layouts](https://nextjs.org/docs/basic-features/layouts).
+
+Nextjs layouts solve the remount issue but it's far from a perfect solution:
+
+- Server-side data fetching (and SSR) is not supported
+- There's no convenient way to duplicate server-side logic on multiple pages (`App` does not support data fetching
+  methods)
+- While client-side data fetching is possible, there is no built-in mechanism to prevent a waterfall effect when
+  rendering nested layouts with data requirements.
 
 ## Getting started
 
@@ -60,21 +83,7 @@ is instantly corrected with `useLayoutEffect()` which is why it should be safe t
 
 5. Clone the code and run `npm run example` to see the included example Nextjs app in action.
 
-## Background
-
-Pages in Nextjs don't come with a hierarchy (like e.g. https://reactrouter.com/). If you want to render 2 pages with a
-shared layout, this layout must be rendered individually by both pages. By default this means that the shared layout
-will **remount** whenever navigating between the pages (as the top-level page component changes). This has been a
-recurring topic in the community and was recently addressed by Nextjs when they
-introduced [layouts](https://nextjs.org/docs/basic-features/layouts).
-
-Nextjs layouts solve the remount issue but it's far from a perfect solution:
-
-- Server-side data fetching (and SSR) is not supported
-- While client-side data fetching is possible, there is no built-in mechanism to prevent a waterfall effect when
-  rendering nested layouts with data requirements.
-
-**next-page-layout** was created to solve these issues.
+**next-page-layout** was created specifically to solve these issues.
 
 ## Basic Usage
 
