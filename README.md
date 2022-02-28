@@ -5,19 +5,16 @@ A type safe, zero dependency layout solution with data fetching capabilities for
 **Features**
 
 - Persisted layout state when navigating between pages \*
-- Server-side layout data population with the usual suspects (**getInitialProps**, **getServerSideProps** and **
-  getStaticProps**)
+- Server-side layout data population with the usual suspects (**getInitialProps**, **getServerSideProps** and **getStaticProps**)
 - Client-side layout data population (**"useInitialProps"**)
-- Nested layouts with independent data requirements running in parallel
+- Nested layouts with per-layout data requirements, all fetched in parallel
 - A type safe API using Typescript
 
 <sub>\* Similar to [layouts](https://nextjs.org/docs/basic-features/layouts) recently added to Nextjs.</sub>
 
 ## Current status
 
-This library is fairly new and doesn't have a large user base yet but I'm currently running several applications in
-production using this lib and it's **working like a charm**. I suggest you give it a try and let me know how it works out -
-I am commited to maintaining this lib.
+This library is fairly new and doesn't have a large user base yet. However, I've been running this in production in several applications for quite some time already, and it's working like a charm. I suggest you give it a try and let me know how it works. I'm commited to maintaining this lib.
 
 ## Background
 
