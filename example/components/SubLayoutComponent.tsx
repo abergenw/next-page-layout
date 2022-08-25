@@ -4,29 +4,32 @@ import Link from './Link';
 interface Props {
   subtitle: ReactNode;
   linkPrefix: ReactNode;
+  pages?: {
+    name: string;
+    slug: string;
+  }[];
   children: ReactNode;
 }
 
 export default function SubLayoutComponent(props: Props) {
   const [counter, setCounter] = useState(0);
+
+  const pages = props.pages ?? [
+    { name: 'Index', slug: '' },
+    { name: 'Page2', slug: 'page2' },
+    { name: 'Page3', slug: 'page3' },
+  ];
+
   return (
     <div style={{ backgroundColor: '#dadada', display: 'flex', padding: 20 }}>
       <div>
-        <div>
-          <Link href={`/${props.linkPrefix}`} block exact>
-            Index
-          </Link>
-        </div>
-        <div>
-          <Link href={`/${props.linkPrefix}page2`} block>
-            Page2
-          </Link>
-        </div>
-        <div>
-          <Link href={`/${props.linkPrefix}page3`} block>
-            Page3
-          </Link>
-        </div>
+        {pages.map((page) => (
+          <div key={page.slug}>
+            <Link href={`/${props.linkPrefix}${page.slug}`} block exact>
+              {page.name}
+            </Link>
+          </div>
+        ))}
       </div>
       <div style={{ marginLeft: 20, flexGrow: 1 }}>
         <div style={{ marginBottom: 20 }}>

@@ -2,7 +2,7 @@ import { makeLayoutPage, wrapSwrInitialProps } from 'next-page-layout';
 import useSWR from 'swr';
 import { sleep } from '../../components/utils';
 import React from 'react';
-import { UseInitialPropsSubLayout } from '../../components/useinitialprops/useinitialprops-layouts';
+import { UseInitialPropsSubLayout2 } from '../../components/useinitialprops/useinitialprops-layouts';
 
 export default makeLayoutPage(
   {
@@ -19,7 +19,7 @@ export default makeLayoutPage(
     component: (props) => {
       return <>{props.content}</>;
     },
-    layout: UseInitialPropsSubLayout,
+    layout: UseInitialPropsSubLayout2,
     useLayoutProps: (props) => ({
       subtitle: 'Page3',
     }),

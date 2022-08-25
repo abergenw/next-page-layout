@@ -1,10 +1,4 @@
-import React, {
-  ComponentType,
-  ReactElement,
-  ReactNode,
-  useMemo,
-  useRef,
-} from 'react';
+import React, { ComponentType, ReactNode, useMemo, useRef } from 'react';
 import {
   InitialProps,
   isClientLayout,
@@ -68,6 +62,20 @@ function _LayoutRenderer<TLayout extends Layout<any, any, any>>(
 ) {
   const { resolvedLayoutProps, clientSideInitialProps } = useLayoutProps();
 
+  const renderCache = useRef<(LayoutRenderCache<TLayout> | undefined)[]>([]);
+
+  const layoutDepth = useMemo(() => {
+    let depth = 1;
+    let layout = props.layout;
+    while (layout.parent) {
+      depth++;
+      layout = layout.parent;
+    }
+
+    renderCache.current.splice(depth);
+    return depth;
+  }, [props.layout]);
+
   useIsomorphicLayoutEffect(() => {
     lastLayoutRef.current = props.layout;
   }, [props.layout]);
@@ -80,21 +88,19 @@ function _LayoutRenderer<TLayout extends Layout<any, any, any>>(
 
   const renderLayout = () => {
     if (resolvedLayoutProps && clientSideInitialProps) {
-      return (
-        <RecursiveLayout
-          {...props}
-          layoutIndex={0}
-          clientSideInitialProps={clientSideInitialProps as any}
-          resolvedLayoutProps={resolvedLayoutProps}
-        >
-          {props.children}
-        </RecursiveLayout>
-      );
+      return renderRecursiveLayouts({
+        ...props,
+        layoutDepthIndex: layoutDepth - 1,
+        layoutIndex: 0,
+        renderCache: renderCache.current,
+        clientSideInitialProps: clientSideInitialProps as any,
+        resolvedLayoutProps: resolvedLayoutProps,
+      });
     }
   };
 
   const lastLayoutRef = useRef<typeof props.layout>(props.layout);
-  const renderedLayoutRef = useRef<ReactElement>();
+  const renderedLayoutRef = useRef<ReactNode>();
 
   // No point re-rendering actual layout if it hasn't changed.
   if (lastLayoutRef.current === props.layout) {
@@ -244,29 +250,41 @@ function RecursiveLayoutResolver<TLayout extends Layout<any, any, any>>(
   ) : null;
 }
 
-interface RecursiveLayoutProps<TLayout extends Layout<any, any, any>>
+interface LayoutRenderCache<TLayout extends Layout<any, any, any>> {
+  layout: TLayout;
+  layoutProps: any;
+}
+
+interface RenderRecursiveLayoutsProps<TLayout extends Layout<any, any, any>>
   extends Omit<Props<TLayout>, 'layoutProps'> {
   layoutIndex: number;
+  layoutDepthIndex: number;
+  renderCache: (LayoutRenderCache<TLayout> | undefined)[];
   clientSideInitialProps: LayoutInitialPropsStack<TLayout>;
   resolvedLayoutProps: InitialProps<LayoutProps<TLayout>>[];
 }
 
-function RecursiveLayout<TLayout extends Layout<any, any, any>>(
-  props: RecursiveLayoutProps<TLayout>
-) {
+const renderRecursiveLayouts = <TLayout extends Layout<any, any, any>>(
+  props: RenderRecursiveLayoutsProps<TLayout>
+): ReactNode => {
   const initialProps = resolveInitialProps(props);
 
-  const renderedLayoutRef = useRef<{ layout: TLayout; layoutProps: any }>();
+  if (
+    props.renderCache[props.layoutDepthIndex] &&
+    props.renderCache[props.layoutDepthIndex]?.layout !== props.layout
+  ) {
+    props.renderCache[props.layoutDepthIndex] = undefined;
+  }
 
   const layoutProps = props.resolvedLayoutProps[props.layoutIndex];
 
   let content;
   if (initialProps.loading || layoutProps.loading) {
-    if (renderedLayoutRef.current?.layout === props.layout) {
+    if (props.renderCache[props.layoutDepthIndex]) {
       content = (
         <props.layout
           key={props.layout.key}
-          {...renderedLayoutRef.current?.layoutProps}
+          {...props.renderCache[props.layoutDepthIndex]?.layoutProps}
         >
           {props.children}
         </props.layout>
@@ -280,7 +298,7 @@ function RecursiveLayout<TLayout extends Layout<any, any, any>>(
       content = LoadingComponent ? <LoadingComponent /> : null;
     }
   } else if (initialProps.error || layoutProps.error) {
-    renderedLayoutRef.current = undefined;
+    props.renderCache[props.layoutDepthIndex] = undefined;
 
     content = (
       <>
@@ -300,23 +318,21 @@ function RecursiveLayout<TLayout extends Layout<any, any, any>>(
       </props.layout>
     );
 
-    renderedLayoutRef.current = {
+    props.renderCache[props.layoutDepthIndex] = {
       layout: props.layout,
       layoutProps: finalLayoutProps,
     };
   }
 
   if (props.layout.parent) {
-    return (
-      <RecursiveLayout
-        {...props}
-        layout={props.layout.parent}
-        layoutIndex={props.layoutIndex + 1}
-      >
-        {content}
-      </RecursiveLayout>
-    );
+    return renderRecursiveLayouts({
+      ...props,
+      layout: props.layout.parent,
+      layoutIndex: props.layoutIndex + 1,
+      layoutDepthIndex: props.layoutDepthIndex - 1,
+      children: content,
+    });
   }
 
   return content;
-}
+};
