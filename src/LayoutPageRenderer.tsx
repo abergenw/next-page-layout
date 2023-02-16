@@ -8,7 +8,7 @@ interface Props<TPage extends LayoutPage<any, any>> {
   initialProps:
     | LayoutPageInitialPropsOf<TPage>
     | { _plain: LayoutPageInitialPropsOf<TPage> }
-    | undefined;
+    | any;
   errorComponent?: ComponentType<ErrorComponentProps>;
   loadingComponent?: ComponentType;
 }
