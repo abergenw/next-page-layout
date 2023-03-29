@@ -16,7 +16,7 @@ import {
 import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect';
 import { useRouter } from 'next/router';
 
-interface Props<TLayout extends Layout<any, any, any>> {
+interface Props<TLayout> {
   layout: TLayout;
   layoutProps: LayoutProps<TLayout>;
   initialProps: LayoutInitialPropsStack<TLayout> | undefined;
@@ -37,14 +37,12 @@ export class RequireParentPropsError extends Error {
   }
 }
 
-export function LayoutRenderer<TLayout extends Layout<any, any, any>>(
-  props: Props<TLayout>
-) {
+export function LayoutRenderer<TLayout>(props: Props<TLayout>) {
   const router = useRouter();
   // router is null while testing.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const resolveMemoKey = useMemo(
-    () => `${props.layout.key}:${router?.asPath}`,
+    () => `${(props.layout as Layout<any, any, any>).key}:${router?.asPath}`,
     [props.layout, router?.asPath]
   );
 
@@ -122,7 +120,7 @@ function LayoutResolver<TLayout extends Layout<any, any, any>>(
 
   const { resolveClientSideInitialProps, onResolveComplete } =
     useLayoutPropsResolver();
-  resolveClientSideInitialProps(clientSideInitialProps);
+  resolveClientSideInitialProps(clientSideInitialProps as any);
   useIsomorphicLayoutEffect(() => {
     onResolveComplete();
   });

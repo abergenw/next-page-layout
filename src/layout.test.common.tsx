@@ -12,7 +12,6 @@ import {
   fetchGetInitialProps,
   fetchGetServerSideProps,
   fetchGetStaticProps,
-  Layout,
   LayoutInitialPropsStack,
   makeLayout,
   MakeLayoutInitialParams,
@@ -84,7 +83,7 @@ export const commonLayoutTests = (renderer: IsomorphicRenderer) => {
     makeGrandChildInitialParams: MakeLayoutInitialParams<{
       five: 'initialFive';
     }>;
-    fetchInitialParams: <TLayout extends Layout<any, any, any>>(
+    fetchInitialParams: <TLayout>(
       layout: TLayout
     ) => Promise<LayoutInitialPropsStack<TLayout>>;
   }) => {

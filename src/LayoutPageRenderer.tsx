@@ -1,21 +1,15 @@
 import React, { ComponentType } from 'react';
-import { isLayoutPage, LayoutPage, LayoutPageInitialPropsOf } from './page';
+import { isLayoutPage } from './page';
 import { ErrorComponentProps, LayoutRenderer } from './LayoutRenderer';
-import { NextComponentType, NextPageContext } from 'next';
 
-interface Props<TPage extends LayoutPage<any, any>> {
-  page: TPage | NextComponentType<NextPageContext, any, any>;
-  initialProps:
-    | LayoutPageInitialPropsOf<TPage>
-    | { _plain: LayoutPageInitialPropsOf<TPage> }
-    | undefined;
+interface Props {
+  page: any;
+  initialProps: any;
   errorComponent?: ComponentType<ErrorComponentProps>;
   loadingComponent?: ComponentType;
 }
 
-export function LayoutPageRenderer<TPage extends LayoutPage<any, any>>(
-  props: Props<TPage>
-) {
+export function LayoutPageRenderer(props: Props) {
   if (!isLayoutPage(props.page)) {
     return <props.page {...props.initialProps} />;
   }

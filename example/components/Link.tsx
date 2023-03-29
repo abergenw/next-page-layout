@@ -22,18 +22,17 @@ export default function Link(props: Props) {
     : currentPath.startsWith(href);
 
   return (
-    <NextLink {...props}>
-      <a
-        style={{
-          ...props.style,
-          color: active ? 'white' : 'blue',
-          backgroundColor: active ? 'black' : undefined,
-          padding: props.block ? 20 : undefined,
-          display: props.block ? 'block' : undefined,
-        }}
-      >
-        {props.children}
-      </a>
+    <NextLink
+      {...props}
+      style={{
+        ...props.style,
+        color: active ? 'white' : 'blue',
+        backgroundColor: active ? 'black' : undefined,
+        padding: props.block ? 20 : undefined,
+        display: props.block ? 'block' : undefined,
+      }}
+    >
+      {props.children}
     </NextLink>
   );
 }
