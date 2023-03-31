@@ -5,6 +5,7 @@ import {
   fetchGetServerSideProps,
   fetchGetStaticProps,
   Layout,
+  LayoutBaseProps,
   layoutHasGetInitialProps,
   LayoutInitialPropsStack,
   makeLayout,
@@ -13,27 +14,27 @@ import {
 import { ComponentType, ReactNode } from 'react';
 
 export type LayoutPage<
-  TInitialProps,
-  TLayout extends Layout<any, any, any>
+  TInitialProps extends LayoutBaseProps,
+  TLayout
 > = NextPage<
   TInitialProps,
   LayoutInitialPropsStack<PageLayout<TInitialProps, TLayout>>
 > & {
-  isPage: boolean;
+  isPage: true;
   layout: PageLayout<TInitialProps, TLayout>;
   _getStaticProps: GetStaticProps<any>;
   _getServerSideProps: GetServerSideProps<any>;
 };
 
-type PageLayout<TInitialProps, TLayout extends Layout<any, any, any>> = Layout<
+type PageLayout<TInitialProps extends LayoutBaseProps, TLayout> = Layout<
   TInitialProps,
   TInitialProps,
   TLayout
 >;
 
 interface MakeComplexLayoutPageParams<
-  TInitialProps,
-  TLayout extends Layout<any, any, any>
+  TInitialProps extends LayoutBaseProps,
+  TLayout
 > {
   component: ComponentType<TInitialProps>;
   layout: TLayout;
@@ -44,21 +45,18 @@ interface MakeComplexLayoutPageParams<
   >['useParentProps'];
 }
 
-interface MakeSimpleLayoutPageParams<TInitialProps> {
+interface MakeSimpleLayoutPageParams<TInitialProps extends LayoutBaseProps> {
   component: ComponentType<TInitialProps>;
   renderLayout: (props: TInitialProps & { children: ReactNode }) => ReactNode;
 }
 
-type MakeLayoutPageParams<
-  TInitialProps,
-  TLayout extends Layout<any, any, any>
-> =
+type MakeLayoutPageParams<TInitialProps extends LayoutBaseProps, TLayout> =
   | MakeComplexLayoutPageParams<TInitialProps, TLayout>
   | MakeSimpleLayoutPageParams<TInitialProps>;
 
 const isMakeComplexLayoutPageParams = <
-  TInitialProps,
-  TLayout extends Layout<any, any, any>
+  TInitialProps extends LayoutBaseProps,
+  TLayout
 >(
   params: MakeLayoutPageParams<TInitialProps, TLayout>
 ): params is MakeComplexLayoutPageParams<TInitialProps, TLayout> => {
@@ -74,8 +72,8 @@ const SimpleLayout = makeLayout(undefined, {
 
 // MakeLayoutPageInitialPropsParams extracted from MakeLayoutPageParams to enable type inference.
 export const makeLayoutPage = <
-  TInitialProps,
-  TLayout extends Layout<any, any, any>
+  TInitialProps extends Record<string, any>,
+  TLayout
 >(
   initialParams: MakeLayoutInitialParams<TInitialProps> | undefined,
   params: MakeLayoutPageParams<TInitialProps, TLayout>
@@ -163,10 +161,12 @@ export const makeLayoutPage = <
   return page as any;
 };
 
-export type LayoutPageInitialPropsOf<TPage extends LayoutPage<any, any>> =
-  TPage extends LayoutPage<infer TInitialProps, infer TLayout>
-    ? LayoutInitialPropsStack<PageLayout<TInitialProps, TLayout>>
-    : never;
+export type LayoutPageInitialPropsOf<TPage> = TPage extends LayoutPage<
+  infer TInitialProps,
+  infer TLayout
+>
+  ? LayoutInitialPropsStack<PageLayout<TInitialProps, TLayout>>
+  : never;
 
 export const isLayoutPage = (
   component: ComponentType<any>

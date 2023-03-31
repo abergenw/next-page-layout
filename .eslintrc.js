@@ -9,6 +9,7 @@ module.exports = {
     project: ['./tsconfig.json'],
   },
   plugins: ['react', '@typescript-eslint'],
+  ignorePatterns: ['*.js'],
   rules: {
     '@next/next/no-html-link-for-pages': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',

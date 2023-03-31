@@ -120,7 +120,7 @@ describe('page', () => {
       const page = create(
         <LayoutPageRenderer
           page={Page}
-          initialProps={await params.fetchInitialParams(Page)}
+          initialProps={await params.fetchInitialParams(Page as any)}
         />
       );
       expect(page.toJSON()).toEqual(['initialOne', '2', 'three', '4', 'bar']);
