@@ -4,6 +4,7 @@ import {
   GetStaticPropsContext,
   NextPageContext,
 } from 'next';
+import allSettled from 'promise.allsettled';
 
 export interface LayoutBaseProps {
   // Children should always be supplied in layouts, but loosening this since pages are also layouts.
@@ -278,7 +279,7 @@ export const _fetchGetInitialProps = async <TLayout>(
     loopLayout = loopLayout.parent;
   }
 
-  const result = await Promise.allSettled(promises);
+  const result = await allSettled(promises);
   return result.map((promise) => {
     if (promise.status === 'fulfilled') {
       return {
